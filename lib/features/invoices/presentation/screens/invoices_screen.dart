@@ -135,33 +135,30 @@ class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
       return;
     }
 
-    // Fetch bookings that do NOT have any invoice yet via Clean Architecture
     final getUninvoiced = ref.read(getUninvoicedBookingsUseCaseProvider);
     final List<Map<String, dynamic>> bookingMaps = await getUninvoiced();
 
+    if (!mounted) return;
+    
     if (bookingMaps.isEmpty) {
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('تعذر إنشاء فاتورة جديدة', textDirection: TextDirection.rtl),
-            content: const Text(
-              'جميع الحجوزات المسجلة حالياً لديها فواتير مسبقة.\nيرجى تسجيل حجز جديد أولاً لتتمكن من توليد فاتورة له.',
-              textDirection: TextDirection.rtl,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('حسناً'),
-              ),
-            ],
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('تعذر إنشاء فاتورة جديدة', textDirection: TextDirection.rtl),
+          content: const Text(
+            'جميع الحجوزات المسجلة حالياً لديها فواتير مسبقة.\nيرجى تسجيل حجز جديد أولاً لتتمكن من توليد فاتورة له.',
+            textDirection: TextDirection.rtl,
           ),
-        );
-      }
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('حسناً'),
+            ),
+          ],
+        ),
+      );
       return;
     }
-
-    if (!mounted) return;
 
     showDialog(
       context: context,
@@ -170,7 +167,6 @@ class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
         return CreateInvoiceDialogContent(
           bookingMaps: bookingMaps,
           onSave: (int bookingId, List<InvoiceLine> lines, List<InvoiceAdjustment> adjustments) async {
-            // Generate professional serial invoice_number
             final now = DateTime.now();
             final numSuffix = now.millisecondsSinceEpoch.toString().substring(7);
             final invoiceNumber = 'INV-${now.year}-$numSuffix';
@@ -179,7 +175,7 @@ class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
               uuid: '',
               bookingId: bookingId,
               invoiceNumber: invoiceNumber,
-              totalAmount: const Money(0), // computed and frozen on issued
+              totalAmount: const Money(0),
               status: InvoiceStatus.draft,
               createdAt: now,
               updatedAt: now,
@@ -190,8 +186,6 @@ class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
             try {
               final useCase = ref.read(createInvoiceUseCaseProvider);
               await useCase(newInvoice, authenticatedUserId);
-              
-              // Refresh state
               ref.read(invoicesListProvider.notifier).fetchInvoices(activeAccount);
               
               if (ctx.mounted) {
@@ -232,85 +226,11 @@ class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
             final activeAccount = ref.read(activeAccountIdProvider);
             if (activeAccount != null) {
               ref.read(invoicesListProvider.notifier).fetchInvoices(activeAccount);
-              // Force invalidation of balance cache
               ref.invalidate(invoiceOutstandingBalanceProvider(initialInvoice.id!));
             }
           },
         );
       },
-    );
-  }
-} const SizedBox(width: 8),
-                      ],
-
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF475569),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                        ),
-                        child: const Text('رجوع'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildDetailMetricCell(String label, String value, Color color) {
-    return Column(
-      children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatusBadge(InvoiceStatus status) {
-    Color bg;
-    Color fg;
-    switch (status) {
-      case InvoiceStatus.draft:
-        bg = const Color(0xFFF1F5F9);
-        fg = const Color(0xFF475569);
-        break;
-      case InvoiceStatus.issued:
-        bg = const Color(0xFFEFF6FF);
-        fg = const Color(0xFF2563EB);
-        break;
-      case InvoiceStatus.partiallyPaid:
-        bg = const Color(0xFFFFF7ED);
-        fg = const Color(0xFFD97706);
-        break;
-      case InvoiceStatus.paid:
-        bg = const Color(0xFFECFDF5);
-        fg = const Color(0xFF059669);
-        break;
-      case InvoiceStatus.cancelled:
-        bg = const Color(0xFFFEF2F2);
-        fg = const Color(0xFFDC2626);
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        status.displayName,
-        style: TextStyle(color: fg, fontSize: 11, fontWeight: FontWeight.bold),
-      ),
     );
   }
 }
