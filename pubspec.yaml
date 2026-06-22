@@ -1,0 +1,26 @@
+name: property_management_system
+description: A comprehensive offline-first hospitality and property management system (PMS) built with Flutter and SQLite, supporting bookings, payments, settlements, guest credit, and expenses.
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.5.1
+  sqflite: ^2.3.0
+  path: ^1.8.3
+  path_provider: ^2.1.1
+  uuid: ^4.3.3
+  intl: ^0.19.0
+  share_plus: ^7.2.1
+  file_picker: ^8.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true

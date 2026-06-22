@@ -1,0 +1,6 @@
+{
+  "name": "Hospitality Management System",
+  "description": "A comprehensive offline-first hospitality and property management system built with Flutter and SQLite, supporting bookings, payments, settlements, guest credit, and expenses.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
