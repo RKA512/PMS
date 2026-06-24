@@ -28,4 +28,7 @@ abstract class BookingRepository {
     required String status,
     required int updatedByUserId,
   });
+
+  Future<List<int>> getUnitIdsForBooking(int bookingId);
+  Future<List<int>> getGuestIdsForBooking(int bookingId);
 }

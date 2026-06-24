@@ -14,6 +14,7 @@ import '../../domain/services/booking_domain_service.dart';
 import '../../domain/usecases/create_booking.dart';
 import '../../domain/usecases/edit_booking.dart';
 import '../../domain/usecases/cancel_booking.dart';
+import '../../domain/entities/booking.dart';
 
 // Repository Provider
 final bookingRepositoryProvider = Provider<BookingRepository>((ref) {
@@ -51,3 +52,40 @@ final cancelBookingUseCaseProvider = Provider<CancelBookingUseCase>((ref) {
     ref.watch(auditServiceProvider),
   );
 });
+
+// Reactive Bookings List StateNotifier and Provider
+class BookingsListNotifier extends StateNotifier<AsyncValue<List<Booking>>> {
+  final BookingRepository _repository;
+  final int? _propertyId;
+
+  BookingsListNotifier(this._repository, this._propertyId) : super(const AsyncValue.loading()) {
+    fetchBookings();
+  }
+
+  Future<void> fetchBookings() async {
+    if (_propertyId == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
+    state = const AsyncValue.loading();
+    try {
+      final list = await _repository.getBookingsForProperty(_propertyId!);
+      state = AsyncValue.data(list);
+    } catch (error, stack) {
+      state = AsyncValue.error(error, stack);
+    }
+  }
+}
+
+final bookingsListProvider = StateNotifierProvider.family<BookingsListNotifier, AsyncValue<List<Booking>>, int?>((ref, propertyId) {
+  return BookingsListNotifier(ref.watch(bookingRepositoryProvider), propertyId);
+});
+
+final bookingUnitIdsProvider = FutureProvider.family<List<int>, int>((ref, bookingId) async {
+  return await ref.watch(bookingRepositoryProvider).getUnitIdsForBooking(bookingId);
+});
+
+final bookingGuestIdsProvider = FutureProvider.family<List<int>, int>((ref, bookingId) async {
+  return await ref.watch(bookingRepositoryProvider).getGuestIdsForBooking(bookingId);
+});
+

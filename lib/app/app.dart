@@ -12,6 +12,7 @@ import '../features/properties/presentation/screens/properties_screen.dart';
 import '../features/units/presentation/screens/units_screen.dart';
 import '../features/guests/presentation/screens/guests_screen.dart';
 import '../features/invoices/presentation/screens/invoices_screen.dart';
+import '../features/bookings/presentation/screens/bookings_screen.dart';
 import '../features/properties/presentation/providers/property_providers.dart';
 
 class PropertyManagementSystemApp extends StatelessWidget {
@@ -59,6 +60,8 @@ class _PMSDashboardHomeScreenState extends ConsumerState<PMSDashboardHomeScreen>
         return const PropertiesScreen();
       case 2:
         return const UnitsScreen();
+      case 3:
+        return const BookingsScreen();
       case 4:
         return const GuestsScreen();
       case 5:

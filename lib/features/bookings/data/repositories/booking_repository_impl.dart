@@ -190,6 +190,30 @@ class BookingRepositoryImpl implements BookingRepository {
     );
   }
 
+  @override
+  Future<List<int>> getUnitIdsForBooking(int bookingId) async {
+    final db = await _dbHelper.executor;
+    final results = await db.query(
+      'booking_units',
+      columns: ['unit_id'],
+      where: 'booking_id = ?',
+      whereArgs: [bookingId],
+    );
+    return results.map((row) => row['unit_id'] as int).toList();
+  }
+
+  @override
+  Future<List<int>> getGuestIdsForBooking(int bookingId) async {
+    final db = await _dbHelper.executor;
+    final results = await db.query(
+      'booking_guests',
+      columns: ['guest_id'],
+      where: 'booking_id = ?',
+      whereArgs: [bookingId],
+    );
+    return results.map((row) => row['guest_id'] as int).toList();
+  }
+
   Booking _mapToBooking(Map<String, dynamic> row) {
     return Booking(
       id: row['id'] as int?,
