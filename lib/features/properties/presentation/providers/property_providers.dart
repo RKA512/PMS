@@ -15,6 +15,7 @@ import '../../domain/usecases/get_properties.dart';
 import '../../domain/usecases/create_property.dart';
 import '../../domain/usecases/update_property.dart';
 import '../../domain/usecases/archive_property.dart';
+import '../../domain/usecases/unarchive_property.dart';
 import '../../domain/usecases/get_property_types.dart';
 import '../../domain/usecases/property_settings_usecases.dart';
 
@@ -44,6 +45,13 @@ final updatePropertyUseCaseProvider = Provider<UpdateProperty>((ref) {
 
 final archivePropertyUseCaseProvider = Provider<ArchiveProperty>((ref) {
   return ArchiveProperty(
+    ref.watch(propertyRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
+});
+
+final unarchivePropertyUseCaseProvider = Provider<UnarchiveProperty>((ref) {
+  return UnarchiveProperty(
     ref.watch(propertyRepositoryProvider),
     ref.watch(auditServiceProvider),
   );

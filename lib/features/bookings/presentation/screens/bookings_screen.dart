@@ -593,8 +593,8 @@ class _BookingFormDialogState extends ConsumerState<BookingFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final guestsAsync = ref.watch(guestsListProvider);
-    final unitsAsync = ref.watch(unitsListProvider(widget.property.id!));
+    final guestsAsync = ref.watch(activeGuestsForBookingProvider);
+    final unitsAsync = ref.watch(activeUnitsForBookingProvider(widget.property.id!));
 
     return AlertDialog(
       title: Text(_isEdit ? 'تعديل الحجز (Edit Booking)' : 'إضافة حجز جديد (Create Booking)'),

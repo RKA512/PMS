@@ -13,6 +13,7 @@ import '../../domain/usecases/get_guests.dart';
 import '../../domain/usecases/create_guest.dart';
 import '../../domain/usecases/update_guest.dart';
 import '../../domain/usecases/archive_guest.dart';
+import '../../domain/usecases/unarchive_guest.dart';
 import '../../domain/usecases/search_guests.dart';
 import '../../domain/usecases/save_guest_contact.dart';
 import '../../domain/usecases/delete_guest_contact.dart';
@@ -43,6 +44,13 @@ final updateGuestUseCaseProvider = Provider<UpdateGuest>((ref) {
 
 final archiveGuestUseCaseProvider = Provider<ArchiveGuest>((ref) {
   return ArchiveGuest(
+    ref.watch(guestRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
+});
+
+final unarchiveGuestUseCaseProvider = Provider<UnarchiveGuest>((ref) {
+  return UnarchiveGuest(
     ref.watch(guestRepositoryProvider),
     ref.watch(auditServiceProvider),
   );

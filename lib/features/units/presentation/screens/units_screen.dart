@@ -309,6 +309,37 @@ class _UnitsScreenState extends ConsumerState<UnitsScreen> {
                                 label: const Text('أرشفة (Archive)', style: TextStyle(fontSize: 12, color: Colors.red)),
                                 style: TextButton.styleFrom(foregroundColor: Colors.red, padding: EdgeInsets.zero),
                               ),
+                            ] else ...[
+                              const SizedBox(width: 8),
+                              TextButton.icon(
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (btnContext) => AlertDialog(
+                                      title: const Text('تأكيد إلغاء أرشفة الغرفة (Confirm Restore)'),
+                                      content: Text('هل أنت متأكد من إلغاء أرشفة الغرفة رقم "${u.unitNumber}"؟'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(btnContext),
+                                          child: const Text('إلغاء (Cancel)'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () async {
+                                            Navigator.pop(btnContext);
+                                            final userId = ref.read(authenticatedUserIdProvider) ?? 1;
+                                            await ref.read(unarchiveUnitUseCaseProvider)(id: u.id!, userId: userId);
+                                            ref.read(unitsListProvider(activeProperty.id!).notifier).fetchUnits(includeArchived: _showArchived);
+                                          },
+                                          child: const Text('استعادة (Restore)', style: TextStyle(color: Colors.green)),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.unarchive, size: 14, color: Colors.green),
+                                label: const Text('استعادة (Restore)', style: TextStyle(fontSize: 12, color: Colors.green)),
+                                style: TextButton.styleFrom(foregroundColor: Colors.green, padding: EdgeInsets.zero),
+                              ),
                             ]
                           ],
                         ),

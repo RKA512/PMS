@@ -245,6 +245,30 @@ class GuestRepositoryImpl implements GuestRepository {
   }
 
   @override
+  Future<void> unarchiveGuest(int id, int userId) async {
+    try {
+      final db = await _dbHelper.database;
+      final oldGuest = await getGuestById(id);
+      if (oldGuest == null) return;
+
+      final now = DateTime.now().toIso8601String();
+      await db.transaction((txn) async {
+        await txn.update(
+          'guests',
+          {'deleted_at': null, 'updated_at': now},
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+      });
+    } catch (e) {
+      throw DatabaseFailure(
+        code: 'UNARCHIVE_GUEST_FAILED',
+        message: 'فشل استعادة الضيف في قاعدة البيانات (Error unarchiving guest: $e)',
+      );
+    }
+  }
+
+  @override
   Future<List<GuestContact>> getGuestContacts(int guestId) async {
     try {
       final db = await _dbHelper.database;

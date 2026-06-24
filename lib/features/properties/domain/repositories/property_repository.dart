@@ -14,6 +14,7 @@ abstract class PropertyRepository {
   Future<int> createProperty(Property property);
   Future<void> updateProperty(Property property);
   Future<void> archiveProperty(int id);
+  Future<void> unarchiveProperty(int id);
   Future<List<PropertyType>> getPropertyTypes();
   Future<List<PropertySettings>> getPropertySettings(int propertyId);
   Future<void> savePropertySetting(int propertyId, String key, String value);

@@ -13,6 +13,7 @@ abstract class GuestRepository {
   Future<int> createGuest(Guest guest, int userId);
   Future<void> updateGuest(Guest guest, int userId);
   Future<void> archiveGuest(int id, int userId);
+  Future<void> unarchiveGuest(int id, int userId);
   Future<List<GuestContact>> getGuestContacts(int guestId);
   Future<void> saveGuestContact(GuestContact contact);
   Future<void> deleteGuestContact(int contactId);

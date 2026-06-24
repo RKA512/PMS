@@ -94,6 +94,23 @@ class PropertyRepositoryImpl implements PropertyRepository {
   }
 
   @override
+  Future<void> unarchiveProperty(int id) async {
+    final db = await _dbHelper.database;
+    final nowString = DateTime.now().toIso8601String();
+    
+    await db.update(
+      'properties',
+      {
+        'deleted_at': null,
+        'status': 'Active',
+        'updated_at': nowString,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  @override
   Future<List<PropertyType>> getPropertyTypes() async {
     final db = await _dbHelper.database;
     final maps = await db.query('property_types', orderBy: 'name ASC');

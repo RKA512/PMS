@@ -99,6 +99,23 @@ class UnitRepositoryImpl implements UnitRepository {
   }
 
   @override
+  Future<void> unarchiveUnit(int id) async {
+    final db = await _dbHelper.executor;
+    final nowString = DateTime.now().toIso8601String();
+
+    await db.update(
+      'units',
+      {
+        'deleted_at': null,
+        'status': UnitStatus.available.toJson(),
+        'updated_at': nowString,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  @override
   Future<void> updateUnitStatus({required int unitId, required String status}) async {
     final db = await _dbHelper.executor;
     await db.update(

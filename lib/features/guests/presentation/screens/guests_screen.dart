@@ -69,6 +69,78 @@ class _GuestsScreenState extends ConsumerState<GuestsScreen> {
     });
   }
 
+  void _confirmRestore(BuildContext context, Guest guest) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Row(
+          children: [
+            Icon(Icons.unarchive, color: Colors.green, size: 28),
+            SizedBox(width: 8),
+            Text('تأكيد الاستعادة / Restore Guest'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'هل أنت متأكد من رغبتك في إلغاء أرشفة نزيل: "${guest.fullName}"؟',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'ستتم استعادة الضيف إلى دليل البحث النشط وسيصبح متاحاً للحجوزات الجديدة.',
+              style: TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.4),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('إلغاء (Cancel)'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final activeAccountId = ref.read(activeAccountIdProvider);
+              final authenticatedUserId = ref.read(authenticatedUserIdProvider);
+              if (activeAccountId == null || authenticatedUserId == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('لا يمكن الاستعادة: سياق المستخدم أو الحساب غير متوفر (Missing active user/account context).')),
+                );
+                return;
+              }
+              Navigator.pop(dialogCtx);
+              try {
+                await ref.read(unarchiveGuestUseCaseProvider)(guest.id!, authenticatedUserId);
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('تمت استعادة ملف الضيف بنجاح.')),
+                );
+                ref.read(guestsListProvider.notifier).fetchGuests(
+                      activeAccountId,
+                      query: ref.read(guestSearchQueryProvider),
+                      includeArchived: ref.read(guestIncludeArchivedProvider),
+                    );
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('فشلت عملية الاستعادة: $e')),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('تأكيد الاستعادة (Restore)'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _confirmArchive(BuildContext context, Guest guest) {
     showDialog(
       context: context,
@@ -530,6 +602,12 @@ class _GuestsScreenState extends ConsumerState<GuestsScreen> {
                                         icon: const Icon(Icons.archive_outlined, size: 18, color: Colors.orange),
                                         tooltip: 'أرشفة (Archive)',
                                         onPressed: () => _confirmArchive(context, g),
+                                      )
+                                    else
+                                      IconButton(
+                                        icon: const Icon(Icons.unarchive_outlined, size: 18, color: Colors.green),
+                                        tooltip: 'استعادة (Restore)',
+                                        onPressed: () => _confirmRestore(context, g),
                                       ),
                                   ],
                                 ),

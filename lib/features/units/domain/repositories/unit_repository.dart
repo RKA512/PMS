@@ -13,6 +13,7 @@ abstract class UnitRepository {
   Future<int> createUnit(Unit unit);
   Future<void> updateUnit(Unit unit);
   Future<void> archiveUnit(int id);
+  Future<void> unarchiveUnit(int id);
   Future<void> updateUnitStatus({required int unitId, required String status});
   Future<List<UnitType>> getUnitTypes();
 }

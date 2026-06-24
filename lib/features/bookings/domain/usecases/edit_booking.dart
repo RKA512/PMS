@@ -6,15 +6,28 @@ library;
 
 import '../../../../core/errors/failure.dart';
 import '../../../../core/common/enums/booking_status.dart';
+import '../../../../core/common/enums/unit_status.dart';
 import '../../../../core/contracts/audit_logger.dart';
+import '../../../properties/domain/repositories/property_repository.dart';
+import '../../../units/domain/repositories/unit_repository.dart';
+import '../../../guests/domain/repositories/guest_repository.dart';
 import '../entities/booking.dart';
 import '../repositories/booking_repository.dart';
 
 class EditBookingUseCase {
   final BookingRepository _repository;
   final AuditLogger _auditService;
+  final PropertyRepository _propertyRepository;
+  final UnitRepository _unitRepository;
+  final GuestRepository _guestRepository;
 
-  EditBookingUseCase(this._repository, this._auditService);
+  EditBookingUseCase(
+    this._repository,
+    this._auditService,
+    this._propertyRepository,
+    this._unitRepository,
+    this._guestRepository,
+  );
 
   Future<void> execute({
     required Booking existingBooking,
@@ -25,6 +38,48 @@ class EditBookingUseCase {
     required bool invoiceIssued, // BR-307 Rule 3 indicator
     required int updatedByUserId,
   }) async {
+    // Domain Rule: Ensure Property is not archived
+    final property = await _propertyRepository.getPropertyById(existingBooking.propertyId);
+    if (property == null || property.deletedAt != null || property.status.toLowerCase() == 'archived') {
+      throw const BusinessRuleFailure(
+        code: 'PROPERTY_ARCHIVED',
+        message: 'لا يمكن تعديل حجز لعقار مؤرشف (Cannot edit booking for an archived property).',
+      );
+    }
+
+    // Domain Rule: Ensure primary guest is not archived
+    final primaryGuest = await _guestRepository.getGuestById(existingBooking.primaryGuestId);
+    if (primaryGuest == null || primaryGuest.deletedAt != null) {
+      throw const BusinessRuleFailure(
+        code: 'GUEST_ARCHIVED',
+        message: 'لا يمكن تعديل حجز لضيف مؤرشف (Cannot edit booking for an archived guest).',
+      );
+    }
+
+    // Domain Rule: Ensure additional guest ids are not archived
+    final guestIds = await _repository.getGuestIdsForBooking(existingBooking.id!);
+    for (final guestId in guestIds) {
+      final guest = await _guestRepository.getGuestById(guestId);
+      if (guest == null || guest.deletedAt != null) {
+        throw const BusinessRuleFailure(
+          code: 'GUEST_ARCHIVED',
+          message: 'لا يمكن تعديل حجز لضيف مؤرشف (Cannot edit booking for an archived guest).',
+        );
+      }
+    }
+
+    // Domain Rule: Ensure all units are not archived
+    final unitIds = await _repository.getUnitIdsForBooking(existingBooking.id!);
+    for (final unitId in unitIds) {
+      final unit = await _unitRepository.getUnitById(unitId);
+      if (unit == null || unit.deletedAt != null || unit.status == UnitStatus.archived) {
+        throw const BusinessRuleFailure(
+          code: 'UNIT_ARCHIVED',
+          message: 'لا يمكن تعديل حجز لوحدة سكنية مؤرشفة (Cannot edit booking for an archived unit).',
+        );
+      }
+    }
+
     // BR-307 Rule 1: Modifying booking in final states is forbidden
     if (existingBooking.status == BookingStatus.checkedOut ||
         existingBooking.status == BookingStatus.cancelled ||

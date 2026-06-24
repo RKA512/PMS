@@ -14,6 +14,7 @@ import '../../domain/usecases/get_units.dart';
 import '../../domain/usecases/create_unit.dart';
 import '../../domain/usecases/update_unit.dart';
 import '../../domain/usecases/archive_unit.dart';
+import '../../domain/usecases/unarchive_unit.dart';
 import '../../domain/usecases/get_unit_types.dart';
 
 // Repository Provider
@@ -42,6 +43,13 @@ final updateUnitUseCaseProvider = Provider<UpdateUnit>((ref) {
 
 final archiveUnitUseCaseProvider = Provider<ArchiveUnit>((ref) {
   return ArchiveUnit(
+    ref.watch(unitRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
+});
+
+final unarchiveUnitUseCaseProvider = Provider<UnarchiveUnit>((ref) {
+  return UnarchiveUnit(
     ref.watch(unitRepositoryProvider),
     ref.watch(auditServiceProvider),
   );

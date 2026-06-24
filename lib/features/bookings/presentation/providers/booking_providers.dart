@@ -8,6 +8,13 @@ import '../../../../core/database/database_helper.dart';
 import '../../../../core/providers/database_providers.dart';
 import '../../../../core/services/audit_service.dart';
 import '../../../units/presentation/providers/unit_providers.dart';
+import '../../../properties/presentation/providers/property_providers.dart';
+import '../../../guests/presentation/providers/guest_providers.dart';
+import '../../../../core/providers/session_providers.dart';
+import '../../../guests/domain/entities/guest.dart';
+import '../../../units/domain/entities/unit.dart';
+import '../../../guests/domain/usecases/get_guests.dart';
+import '../../../units/domain/usecases/get_units.dart';
 import '../../domain/repositories/booking_repository.dart';
 import '../../data/repositories/booking_repository_impl.dart';
 import '../../domain/services/booking_domain_service.dart';
@@ -36,6 +43,9 @@ final createBookingUseCaseProvider = Provider<CreateBookingUseCase>((ref) {
     ref.watch(bookingRepositoryProvider),
     ref.watch(bookingDomainServiceProvider),
     ref.watch(auditServiceProvider),
+    ref.watch(propertyRepositoryProvider),
+    ref.watch(unitRepositoryProvider),
+    ref.watch(guestRepositoryProvider),
   );
 });
 
@@ -43,6 +53,9 @@ final editBookingUseCaseProvider = Provider<EditBookingUseCase>((ref) {
   return EditBookingUseCase(
     ref.watch(bookingRepositoryProvider),
     ref.watch(auditServiceProvider),
+    ref.watch(propertyRepositoryProvider),
+    ref.watch(unitRepositoryProvider),
+    ref.watch(guestRepositoryProvider),
   );
 });
 
@@ -87,5 +100,19 @@ final bookingUnitIdsProvider = FutureProvider.family<List<int>, int>((ref, booki
 
 final bookingGuestIdsProvider = FutureProvider.family<List<int>, int>((ref, bookingId) async {
   return await ref.watch(bookingRepositoryProvider).getGuestIdsForBooking(bookingId);
+});
+
+// Fetch ONLY active (unarchived) guests for selection in Booking Dialog
+final activeGuestsForBookingProvider = FutureProvider<List<Guest>>((ref) async {
+  final accountId = ref.watch(activeAccountIdProvider);
+  if (accountId == null) return [];
+  final getGuests = ref.watch(getGuestsUseCaseProvider);
+  return await getGuests(accountId, includeArchived: false);
+});
+
+// Fetch ONLY active (unarchived) units for selection in Booking Dialog
+final activeUnitsForBookingProvider = FutureProvider.family<List<Unit>, int>((ref, propertyId) async {
+  final getUnits = ref.watch(getUnitsUseCaseProvider);
+  return await getUnits(propertyId: propertyId, includeArchived: false);
 });
 
