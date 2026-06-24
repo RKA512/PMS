@@ -1,0 +1,9060 @@
+ Application_Flows
+
+Status: APPROVED
+
+Reference Authority:
+
+* Final_Design_Decisions.md
+* Business_Rules.md
+
+---
+
+# Purpose
+
+يوضح هذا المستند التدفقات التشغيلية الرسمية للنظام.
+
+كل Use Case داخل التطبيق يجب أن يتبع أحد هذه التدفقات أو يكون امتداداً مباشراً لها.
+
+---
+
+# Flow 01 — Create Property
+
+### Actor
+
+Owner
+
+### Steps
+
+1. إنشاء Property جديدة.
+2. تحديد العملة الأساسية.
+3. تحديد نوع المنشأة.
+4. حفظ الإعدادات الافتراضية.
+5. إنشاء Audit Log.
+
+---
+
+# Flow 02 — Create User
+
+### Actor
+
+Owner
+
+### Steps
+
+1. إدخال بيانات المستخدم.
+2. اختيار Role.
+3. تحديد المنشآت المسموح له بالوصول إليها.
+4. حفظ المستخدم.
+5. إنشاء Audit Log.
+
+---
+
+# Flow 03 — Create Guest
+
+### Actor
+
+Receptionist
+
+### Steps
+
+1. البحث أولاً داخل دليل النزلاء الخاص بالحساب.
+2. إذا وجد النزيل:
+
+   * استخدام السجل الموجود.
+3. إذا لم يوجد:
+
+   * إنشاء Guest جديد.
+4. إنشاء Audit Log.
+
+### Notes
+
+Guest يتبع Account.
+
+ولا يتبع Property.
+
+---
+
+# Flow 04 — Create Booking
+
+### Actor
+
+Receptionist
+
+### Steps
+
+1. اختيار Property.
+2. اختيار Primary Guest.
+3. اختيار التواريخ.
+4. اختيار وحدة أو أكثر.
+5. التحقق من التوفر.
+6. إنشاء Booking.
+7. إنشاء Booking Units.
+8. إنشاء Audit Log.
+
+# Flow 04.5 — Edit Booking
+
+### Actor
+
+Receptionist
+
+### Steps
+
+1. فتح الحجز.
+2. التحقق من إمكانية التعديل.
+3. تعديل البيانات المسموح بها.
+4. حفظ التغييرات.
+5. إنشاء Audit Log.
+
+### Restrictions
+
+يمنع تعديل الحجز إذا كانت حالته:
+
+* CheckedOut
+* Cancelled
+* NoShow
+
+بعد Check In:
+
+يمنع تعديل البيانات المؤثرة على الإقامة أو الفاتورة.
+
+ويسمح بتعديل البيانات التشغيلية غير المالية.
+
+---
+
+# Flow 05 — Add Additional Guests
+
+### Actor
+
+Receptionist
+
+### Steps
+
+1. فتح الحجز.
+2. إضافة نزيل أو أكثر.
+3. إنشاء BookingGuest records.
+4. تحديث Audit Log.
+
+# Flow 05.5 — Add Booking Note
+
+### Actor
+
+Receptionist / Manager
+
+### Steps
+
+1. فتح الحجز.
+2. إدخال الملاحظة.
+3. حفظ الملاحظة.
+4. إنشاء Audit Log.
+
+### Note
+
+الملاحظات غير مطلوبة مالياً.
+
+وتستخدم للأغراض التشغيلية والتواصل الداخلي فقط.
+
+---
+
+# Flow 06 — Group Booking
+
+### Actor
+
+Receptionist
+
+### Steps
+
+1. إنشاء الحجز الرئيسي.
+2. إضافة عدة نزلاء.
+3. إضافة عدة وحدات.
+4. إنشاء BookingGuests.
+5. إنشاء BookingUnits.
+
+---
+
+# Flow 07 — Check In
+
+### Actor
+
+Receptionist
+
+### Steps
+
+1. فتح الحجز.
+2. التحقق من الحالة.
+3. تغيير الحالة إلى:
+
+CheckedIn
+
+4. تسجيل وقت الدخول الفعلي.
+5. إنشاء Audit Log.
+
+---
+
+# Flow 08 — Check Out
+
+### Actor
+
+Receptionist
+
+### Steps
+
+1. فتح الحجز.
+2. حساب الالتزامات المالية النهائية.
+3. تحديث الفاتورة.
+4. معالجة أي تسوية مطلوبة.
+5. تغيير الحالة إلى:
+
+CheckedOut
+
+6. تسجيل وقت الخروج.
+7. إنشاء Audit Log.
+
+---
+
+# Flow 09 — Cancel Booking
+
+### Actor
+
+Receptionist
+
+### Steps
+
+1. فتح الحجز.
+2. التحقق من إمكانية الإلغاء.
+3. تغيير الحالة إلى:
+
+Cancelled
+
+4. إنشاء Audit Log.
+
+---
+
+# Flow 10 — No Show
+
+### Actor
+
+Receptionist
+
+### Steps
+
+1. فتح الحجز.
+2. تغيير الحالة إلى:
+
+NoShow
+
+3. إنشاء Audit Log.
+
+### Note
+
+تغيير الحالة إلى NoShow لا ينشئ فاتورة تلقائياً.
+
+ولا يطبق أي رسوم تلقائية.
+
+يمكن للإدارة لاحقاً:
+
+* إنشاء فاتورة جزئية (حسب سياسة المنشأة).
+* أو إلغاء الحجز بالكامل.
+
+التأثير المالي يترك كخيار يدوي خارج هذا التدفق ضمن MVP.
+
+
+---
+
+# Flow 11 — Transfer Guest To Another Unit
+
+### Actor
+
+Receptionist
+
+### Steps
+
+1. اختيار BookingUnit الحالية.
+2. اختيار الوحدة الجديدة.
+3. إغلاق BookingUnit الحالية.
+4. إنشاء BookingUnit جديدة.
+5. إنشاء BookingUnitTransfer.
+6. إنشاء Audit Log.
+
+---
+
+# Flow 12 — Create Invoice
+
+### Actor
+
+Receptionist
+
+### Steps
+
+1. إنشاء Invoice.
+2. إنشاء InvoiceLines.
+3. حساب الإجمالي.
+4. حفظ الفاتورة.
+5. إنشاء Audit Log.
+
+Note:
+
+الفاتورة لا تنشأ تلقائياً عند Check In.
+
+بل يتم إنشاؤها يدوياً بواسطة الموظف (Receptionist / Manager) عند الحاجة.
+
+يمكن أتمتة هذه الخطوة في إصدارات Post MVP.
+
+---
+
+# Flow 13 — Update Draft Invoice
+
+### Actor
+
+Manager
+
+### Steps
+
+1. فتح Invoice.
+2. التحقق من أنها:
+
+Draft
+
+3. تعديل البنود.
+4. إعادة الحساب.
+5. إنشاء Audit Log.
+
+---
+
+# Flow 14 — Issue Invoice
+
+### Actor
+
+Manager
+
+### Steps
+
+1. فتح الفاتورة.
+2. التحقق من صحتها.
+3. تغيير الحالة إلى:
+
+Issued
+
+4. إنشاء Audit Log.
+
+# Flow 14.5 — Cancel Invoice
+
+### Actor
+
+Manager
+
+### Steps
+
+1. فتح Invoice.
+2. التحقق من أنها ليست:
+
+   Paid
+
+3. تغيير الحالة إلى:
+
+   Cancelled
+
+4. إنشاء Audit Log.
+
+### Note
+
+الفاتورة الملغاة لا تستقبل مدفوعات جديدة.
+
+وإذا كانت عليها مدفوعات سابقة، يجب معالجتها عبر Refund.
+
+---
+
+# Flow 15 — Register Payment
+
+### Actor
+
+Cashier / Receptionist
+
+### Steps
+
+1. اختيار Invoice.
+2. إدخال المبلغ.
+3. اختيار Payment Method.
+4. إنشاء Payment.
+5. تحديث حالة Invoice.
+6. إنشاء Audit Log.
+
+---
+
+# Flow 16 — Register Refund
+
+### Actor
+
+Manager
+
+### Steps
+
+1. اختيار Payment أصلية.
+2. تحديد مبلغ الاسترداد.
+3. إنشاء Payment من نوع:
+
+Refund
+
+4. تحديث حالة Invoice.
+5. إنشاء Audit Log.
+
+---
+
+# Flow 17 — Register Adjustment
+
+### Actor
+
+Manager
+
+### Steps
+
+1. تحديد سبب التصحيح.
+2. إنشاء Payment من نوع:
+
+Adjustment
+
+3. تحديث الحالة المالية.
+4. إنشاء Audit Log.
+
+---
+
+# Flow 18 — Create Overpayment Settlement
+
+### Actor
+
+System
+
+### Trigger
+
+Net Paid > Invoice Total
+
+### Steps
+
+1. حساب الفرق.
+2. إنشاء Settlement.
+3. النوع:
+
+Overpayment
+
+4. الحالة:
+
+Pending
+
+---
+
+# Flow 19 — Create Underpayment Settlement
+
+### Actor
+
+System
+
+### Trigger
+
+Net Paid < Invoice Total
+
+### Steps
+
+1. حساب الفرق.
+2. إنشاء Settlement.
+3. النوع:
+
+Underpayment
+
+4. الحالة:
+
+Pending
+
+---
+
+# Flow 20 — Update Pending Settlement
+
+### Actor
+
+System
+
+### Condition
+
+Settlement Status = Pending
+
+### Steps
+
+1. إعادة حساب الفرق.
+2. تحديث difference_amount.
+3. تحديث Audit Log.
+
+### Note
+
+يسمح فقط للتسويات المعلقة.
+
+---
+
+# Flow 21 — Complete Settlement
+
+### Actor
+
+Manager
+
+### Steps
+
+1. فتح Settlement.
+2. التحقق من البيانات.
+3. تغيير الحالة إلى:
+
+Completed
+
+4. إنشاء Audit Log.
+
+---
+
+# Flow 22 — Settlement Correction
+
+### Actor
+
+Manager
+
+### Steps
+
+1. اختيار Settlement مكتملة.
+2. إدخال سبب التصحيح.
+3. إنشاء SettlementCorrection.
+4. إنشاء Audit Log.
+
+---
+
+# Flow 23 — Create Guest Credit
+
+### Actor
+
+System / Manager
+
+### Trigger
+
+Overpayment
+
+أو
+
+Manual Credit
+
+### Steps
+
+1. إنشاء GuestCreditTransaction.
+2. تحديث cached_balance.
+3. إنشاء Audit Log.
+
+---
+
+# Flow 24 — Use Guest Credit
+
+### Actor
+
+Receptionist
+
+### Steps
+
+1. اختيار Invoice.
+2. التحقق من الرصيد.
+3. إنشاء GuestCreditTransaction:
+
+   CreditUsed
+
+4. إنشاء Payment:
+
+   Payment Type = Incoming
+
+   Payment Method = GuestCredit
+
+5. تحديث Invoice.
+6. إنشاء Audit Log.
+
+### Important
+
+Guest Credit يعتبر Payment Method
+وليس Payment Type.
+
+ليست عملية نقدية جديدة.
+
+Payment Type = Incoming يعكس تسوية الالتزام المالي، وليس تدفقاً نقدياً جديداً.
+
+---
+
+# Flow 25 — Create Expense
+
+### Actor
+
+Manager
+
+### Steps
+
+1. اختيار Expense Category.
+2. إدخال المبلغ.
+3. تحديد التاريخ.
+4. حفظ Expense.
+5. إنشاء Audit Log.
+
+---
+
+# Flow 26 — Archive Expense
+
+### Actor
+
+Manager
+
+### Steps
+
+1. التحقق من الصلاحيات.
+2. تعبئة deleted_at.
+3. إنشاء Audit Log.
+
+---
+
+# Flow 27 — Open Business Day
+
+### Actor
+
+Manager
+
+### Condition
+
+UseBusinessDays = Enabled
+
+### Steps
+
+1. إنشاء Business Day.
+2. الحالة:
+
+Open
+
+3. تسجيل وقت الفتح.
+
+---
+
+# Flow 28 — Close Business Day
+
+### Actor
+
+Manager
+
+### Steps
+
+1. مراجعة العمليات.
+2. قفل اليوم.
+3. تغيير الحالة:
+
+Closed
+
+4. تسجيل وقت الإغلاق.
+5. إنشاء Audit Log.
+
+---
+
+# Flow 29 — Generate Occupancy Report
+
+### Actor
+
+Manager
+
+### Parameters
+
+* Property (إلزامي)
+* Date Range (إلزامي)
+
+### Output
+
+* عدد الحجوزات
+* عدد النزلاء
+* نسبة الإشغال
+* الوحدات المتاحة
+
+---
+
+# Flow 30 — Generate Revenue Report
+
+### Actor
+
+Manager
+
+### Parameters
+
+* Property (إلزامي)
+* Date Range (إلزامي)
+
+
+### Output
+
+* Incoming Payments
+* Refunds
+* Net Revenue
+
+### Important
+
+Guest Credit Usage
+
+لا يعتبر إيراداً نقدياً جديداً.
+
+---
+
+# Flow 31 — Generate Expense Report
+
+### Parameters
+
+* Property (إلزامي)
+* Date Range (إلزامي)
+
+### Output
+
+* Expenses By Category
+* Expenses By Property
+* Expenses By Period
+
+---
+
+# Flow 32 — Generate Settlement Report
+
+### Parameters
+
+* Property (إلزامي)
+* Date Range (إلزامي)
+
+### Output
+
+* Pending Settlements
+* Completed Settlements
+* Settlement Corrections
+
+---
+
+# Flow 33 — Generate Guest Credit Report
+
+### Parameters
+
+* Property (إلزامي)
+* Date Range (إلزامي)
+
+### Output
+
+* Guest Credit Accounts
+* Credit Transactions
+* Current Balances
+
+### Important
+
+لا يوجد:
+
+Expired Credits
+
+---
+
+# Flow 34 — Backup Database
+
+### Actor
+
+Owner
+
+### Steps
+
+1. اختيار النسخ الاحتياطي.
+2. إنشاء نسخة قاعدة البيانات.
+3. التحقق من سلامة الملف.
+4. إنشاء Audit Log.
+
+---
+
+# Flow 35 — Restore Database
+
+### Actor
+
+Owner
+
+### Steps
+
+1. اختيار ملف النسخة.
+2. التحقق من صحته.
+3. استعادة البيانات.
+4. إنشاء Audit Log.
+
+---
+
+# Flow 36 — Export Data
+
+### Actor
+
+Owner / Manager
+
+### Formats
+
+* PDF
+* Excel
+
+---
+
+# Flow 37 — Synchronization Queue (Post MVP)
+
+### Actor
+
+System
+
+### Steps
+
+1. تسجيل العملية داخل Sync Queue.
+2. انتظار المزامنة.
+3. تحديث الحالة.
+
+### Status
+
+* Pending
+* Processing
+* Completed
+* Failed
+
+---
+
+# End Of Document
+
+
+ Architecture
+
+
+Status: APPROVED
+
+Reference Authority:
+
+* Final_Design_Decisions.md
+* MVP_Scope.md
+
+---
+
+# Purpose
+
+تحدد هذه الوثيقة المعمارية الرسمية للمشروع.
+
+أي كود يتم إنشاؤه داخل المشروع يجب أن يلتزم بها.
+
+في حال تعارض أي قرار برمجي مع هذه الوثيقة:
+
+تعتبر هذه الوثيقة المرجع المعماري الأعلى.
+
+---
+
+# Architectural Style
+
+يعتمد المشروع على:
+
+```text id="arch001"
+Clean Architecture
++
+Feature First Architecture
++
+ Offline First Design
+```
+
+---
+
+# Core Principles
+
+---
+
+## AR-001
+
+الفصل الكامل بين:
+
+* Presentation
+* Domain
+* Data
+
+---
+
+## AR-002
+
+Business Logic لا يكتب داخل UI.
+
+---
+
+## AR-003
+
+UI لا تتواصل مع Database مباشرة.
+
+---
+
+## AR-004
+
+Database لا تتواصل مع UI مباشرة.
+
+---
+
+## AR-005
+
+جميع العمليات تمر عبر Domain Layer.
+
+---
+
+# High Level Structure
+
+```text id="arch002"
+Presentation
+      │
+      ▼
+Use Cases
+      │
+      ▼
+Repositories
+      │
+      ▼
+Data Sources
+      │
+      ▼
+SQLite
+```
+
+---
+
+# Project Organization
+
+المشروع يعتمد:
+
+```text id="arch003"
+Feature First
+```
+
+---
+
+كل ميزة مستقلة تحتوي:
+
+```text id="arch004"
+data
+domain
+presentation
+```
+
+---
+
+# Layer Responsibilities
+
+---
+
+## Presentation Layer
+
+مسؤولة عن:
+
+* Screens
+* Widgets
+* Dialogs
+* State Management
+
+---
+
+ممنوع داخلها:
+
+* SQL
+* Business Rules
+* Financial Logic
+
+---
+
+## Domain Layer
+
+مسؤولة عن:
+
+* Entities
+* Use Cases
+* Repository Contracts
+* Domain Services
+
+### Domain Services
+
+Purpose:
+تنفيذ العمليات التجارية المركبة التي تتطلب التنسيق بين أكثر من Repository أو Aggregate.
+
+Rules:
+
+* Domain Services تنتمي إلى Domain Layer.
+* Domain Services لا تعتمد على Flutter.
+* Domain Services لا تحتوي SQL.
+* Domain Services تستخدم Repository Contracts فقط.
+* Use Cases يمكنها تفويض العمليات المركبة إلى Domain Services.
+
+Examples:
+BookingDomainService
+SettlementDomainService
+PaymentProcessingService
+
+---
+
+تعتبر:
+
+```text id="arch005"
+Heart Of The Application
+```
+
+---
+
+## Data Layer
+
+مسؤولة عن:
+
+* SQLite
+* Models
+* Mappers
+* Repositories Implementation
+
+---
+
+ممنوع داخلها:
+
+* UI Logic
+
+---
+
+# Feature Structure
+
+كل Feature يجب أن تتبع:
+
+```text id="arch006"
+feature/
+
+├── feature.dart
+
+├── data/
+│   ├── datasources/
+│   ├── models/
+│   └── repositories/
+
+├── domain/
+│   ├── entities/
+│   ├── repositories/
+│   ├── usecases/
+│   └── services/
+
+└── presentation/
+    ├── screens/
+    ├── widgets/
+    ├── dialogs/
+    └── providers/
+```
+
+---
+
+# Core Layer
+
+يحتوي على المكونات المشتركة فقط.
+
+---
+
+## Core Database
+
+```text id="arch007"
+database_helper
+schema
+migrations
+seeders
+```
+
+---
+
+## Core Services
+
+```text id="arch008"
+backup
+export
+audit
+security
+```
+
+---
+
+## Core Common
+
+```text id="arch009"
+enums
+utils
+extensions
+shared_models
+```
+
+---
+
+# Dependency Rule
+
+---
+
+## AR-100
+
+Presentation
+
+تعتمد على:
+
+Domain
+
+---
+
+## AR-101
+
+Domain
+
+لا يعتمد على أي Layer أخرى.
+
+---
+
+## AR-102
+
+Data
+
+تعتمد على Domain.
+
+---
+
+## AR-103
+
+Dependency Direction
+
+```text id="arch010"
+Presentation
+      ↓
+
+Domain
+      ↑
+
+Data
+```
+
+---
+
+# State Management
+
+المعتمد رسمياً:
+
+```text id="arch011"
+Riverpod
+```
+
+---
+
+ممنوع:
+
+```text id="arch012"
+Provider
+Bloc
+GetX
+MobX
+```
+
+إلا بقرار تصميم جديد.
+
+---
+
+# Database Architecture
+
+---
+
+## AR-200
+
+قاعدة البيانات الرسمية:
+
+SQLite
+
+---
+
+## AR-201
+
+Offline First
+
+---
+
+## AR-202
+
+SQLite هي:
+
+Source Of Truth
+
+---
+
+## AR-203
+
+Cloud ليست مصدر الحقيقة.
+
+---
+
+# Database Access Rules
+
+---
+
+## AR-210
+
+ممنوع تنفيذ SQL داخل UI.
+
+---
+
+## AR-211
+
+ممنوع تنفيذ SQL داخل Use Cases.
+
+---
+
+## AR-212
+
+SQL يوجد فقط داخل:
+
+```text id="arch013"
+datasources
+database layer
+```
+
+---
+
+# Repository Pattern
+
+---
+
+## AR-300
+
+كل Feature تمتلك Repository Contract.
+
+---
+
+## AR-301
+
+Repository Contract داخل:
+
+```text id="arch014"
+domain/repositories
+```
+
+---
+
+## AR-302
+
+Repository Implementation داخل:
+
+```text id="arch015"
+data/repositories
+```
+
+---
+
+# Entity Rules
+
+---
+
+## AR-400
+
+Entities لا تعتمد على Flutter.
+
+---
+
+## AR-401
+
+Entities لا تحتوي Serialization.
+
+---
+
+## AR-402
+
+Entities تمثل Domain فقط.
+
+---
+
+# Model Rules
+
+---
+
+## AR-500
+
+Models موجودة فقط داخل Data Layer.
+
+---
+
+## AR-501
+
+Models مسؤولة عن:
+
+```text id="arch016"
+toMap
+fromMap
+toJson
+fromJson
+```
+
+---
+
+# Financial Isolation
+
+---
+
+## AR-600
+
+المنطق المالي يجب أن يبقى داخل:
+
+```text id="arch017"
+domain/usecases
+domain/services
+```
+
+---
+
+## AR-601
+
+ممنوع كتابة قواعد مالية داخل:
+
+* Widgets
+* Providers
+* Database Layer
+
+---
+
+# Audit Architecture
+
+---
+
+## AR-700
+
+Audit Service مركزي.
+
+---
+
+## AR-701
+
+أي عملية حساسة تمر عبر Audit Service.
+
+---
+
+## AR-702
+
+Audit Logging لا ينفذ من UI.
+
+---
+
+# Security Rules
+
+---
+
+## AR-800
+
+لا تخزن كلمات المرور كنصوص صريحة.
+
+---
+
+## AR-801
+
+يستخدم Password Hash فقط.
+
+---
+
+## AR-802
+
+لا تخزن Secrets داخل الكود.
+
+---
+
+# Synchronization Readiness
+
+---
+
+## AR-900
+
+يجب أن تحتوي الكيانات الرئيسية على:
+
+```text id="arch018"
+uuid
+```
+
+---
+
+## AR-901
+
+يجب الحفاظ على:
+
+```text id="arch019"
+sync_queue
+```
+
+كجزء من البنية.
+
+---
+
+## AR-902
+
+المزامنة نفسها:
+
+Post MVP
+
+---
+
+# Testing Architecture
+
+---
+
+## AR-1000
+
+كل Use Case يجب أن يمتلك Unit Tests.
+
+---
+
+## AR-1001
+
+كل Repository يجب أن يمتلك Integration Tests.
+
+---
+
+## AR-1002
+
+الاختبارات تكتب داخل:
+
+```text id="arch020"
+test/
+```
+
+---
+
+# Forbidden Practices
+
+---
+
+## AR-1100
+
+ممنوع:
+
+Business Logic In Widgets
+
+---
+
+## AR-1101
+
+ممنوع:
+
+Direct Database Access From UI
+
+---
+
+## AR-1102
+
+ممنوع:
+
+Shared Mutable Global State
+
+---
+
+## AR-1103
+
+ممنوع:
+
+Feature To Feature Direct Coupling
+
+---
+
+## AR-1104
+
+ممنوع:
+
+Circular Dependencies
+
+---
+
+# Design Freeze Rule
+
+---
+
+## AR-1200
+
+أي تعديل معماري جديد يجب أن:
+
+1. يبرر كتابياً.
+2. يراجع مقابل الوثائق المعتمدة.
+3. لا يكسر القرارات النهائية.
+
+---
+### TransactionRunner Contract
+
+Purpose:
+توفير آلية موحدة لتنفيذ العمليات الذرية (Atomic Operations).
+
+Location:
+core/contracts/transaction_runner.dart
+
+Rules:
+
+* لا تنفذ العمليات المالية المركبة مباشرة داخل Repositories.
+* Domain Services تستخدم TransactionRunner عند الحاجة إلى Atomicity.
+* TransactionRunner هو المسؤول عن حدود Transaction.
+* التنفيذ الفعلي داخل MVP يعتمد على SQLite.
+
+# End Of Document
+
+
+ Audit_Policy
+
+
+Status: APPROVED
+
+Reference Authority:
+
+* Final_Design_Decisions.md
+* Financial_Rules.md
+* Business_Rules.md
+
+---
+
+# Purpose
+
+تحدد هذه الوثيقة سياسة التدقيق (Audit Policy) الرسمية للنظام.
+
+الغرض منها:
+
+* التتبع الكامل للعمليات.
+* كشف الأخطاء.
+* التحقيق في النزاعات.
+* حماية السجلات المالية.
+* توثيق تاريخ التعديلات.
+
+---
+
+# Core Principle
+
+---
+
+## AP-001
+
+كل عملية مهمة يجب أن تكون قابلة للتتبع.
+
+---
+
+## AP-002
+
+لا يسمح بوجود عملية حساسة بدون Audit Log.
+
+---
+
+## AP-003
+
+Audit Logs غير قابلة للتعديل.
+
+---
+
+## AP-004
+
+Audit Logs غير قابلة للحذف.
+
+---
+
+## AP-005
+
+حتى Owner لا يمتلك صلاحية:
+
+* تعديل Audit Logs
+* حذف Audit Logs
+
+---
+
+# Audit Log Structure
+
+---
+
+## AP-100
+
+كل سجل تدقيق يحتوي على:
+
+* Audit Id
+* Timestamp
+* User Id
+* Property Id (عند الحاجة)
+* Entity Type
+* Entity Id
+* Action
+* Description
+
+---
+
+## AP-101
+
+عند التعديل يجب حفظ:
+
+* Old Values
+* New Values
+
+---
+
+## AP-102
+
+القيم القديمة والجديدة تحفظ بصيغة JSON.
+
+---
+
+# Audit Levels
+
+---
+
+## Information
+
+عمليات عادية.
+
+أمثلة:
+
+* فتح شاشة
+* إنشاء تقرير
+
+---
+
+## Warning
+
+عمليات حساسة.
+
+أمثلة:
+
+* إلغاء حجز
+* أرشفة سجل
+
+---
+
+## Critical
+
+عمليات مالية أو مؤثرة على البيانات.
+
+أمثلة:
+
+* إنشاء Payment
+* Refund
+* Settlement
+* Restore Database
+
+---
+
+# Booking Audit Rules
+
+---
+
+## AP-200
+
+يجب تسجيل Audit عند:
+
+* Create Booking
+* Edit Booking
+* Cancel Booking
+* Check In
+* Check Out
+* Unit Transfer
+
+---
+
+## AP-201
+
+يجب حفظ:
+
+* Booking Id
+* User
+* Timestamp
+
+---
+
+# Guest Audit Rules
+
+---
+
+## AP-300
+
+يجب تسجيل Audit عند:
+
+* Create Guest
+* Edit Guest
+* Archive Guest
+
+---
+
+# Invoice Audit Rules
+
+---
+
+## AP-400
+
+يجب تسجيل Audit عند:
+
+* Create Invoice
+* Edit Draft Invoice
+* Issue Invoice
+* Cancel Invoice
+
+---
+
+# Payment Audit Rules
+
+---
+
+## AP-500
+
+يجب تسجيل Audit عند:
+
+* Create Payment
+* Refund
+* Adjustment
+
+---
+
+## AP-501
+
+يجب حفظ:
+
+* Amount
+* Method
+* Type
+* User
+* Timestamp
+
+---
+
+## AP-502
+
+تعتبر جميع عمليات Payment:
+
+Critical
+
+---
+
+# Settlement Audit Rules
+
+---
+
+## AP-600
+
+يجب تسجيل Audit عند:
+
+* Create Settlement
+* Complete Settlement
+* Cancel Settlement
+
+---
+
+## AP-601
+
+يجب تسجيل Audit عند:
+
+SettlementCorrection
+
+---
+
+## AP-602
+
+Completed Settlement
+
+تبقى قابلة للتتبع بالكامل.
+
+---
+
+# Guest Credit Audit Rules
+
+---
+
+## AP-700
+
+يجب تسجيل Audit عند:
+
+* CreditCreated
+* CreditUsed
+* CreditAdjustment
+
+---
+
+## AP-701
+
+لا يوجد:
+
+CreditExpired
+
+---
+
+# Expense Audit Rules
+
+---
+
+## AP-800
+
+يجب تسجيل Audit عند:
+
+* Create Expense
+* Update Expense
+* Archive Expense
+
+---
+
+# User Audit Rules
+
+---
+
+## AP-900
+
+يجب تسجيل Audit عند:
+
+* Create User
+* Update User
+* Disable User
+* Archive User
+
+---
+
+# Property Audit Rules
+
+---
+
+## AP-1000
+
+يجب تسجيل Audit عند:
+
+* Create Property
+* Update Property
+* Archive Property
+
+---
+
+# Permission Audit Rules
+
+---
+
+## AP-1100
+
+يجب تسجيل Audit عند:
+
+* Change Role
+* Change Permissions
+* Grant Property Access
+* Revoke Property Access
+
+---
+
+## AP-1101
+
+تعتبر هذه العمليات:
+
+Critical
+
+---
+
+# System Audit Rules
+
+---
+
+## AP-1200
+
+يجب تسجيل Audit عند:
+
+* Backup Database
+* Restore Database
+* Import Data
+* Export Data
+
+---
+
+## AP-1201
+
+Restore Database
+
+يعتبر Critical Event.
+
+---
+
+# Audit Retention Policy
+
+---
+
+## AP-1300
+
+لا يتم حذف Audit Logs.
+
+---
+
+## AP-1301
+
+لا يتم أرشفة Audit Logs.
+
+---
+
+## AP-1302
+
+تبقى Audit Logs متاحة طوال عمر النظام.
+
+---
+
+# Sensitive Data Rules
+
+---
+
+## AP-1400
+
+لا يتم تخزين كلمات المرور داخل Audit Logs.
+
+---
+
+## AP-1401
+
+لا يتم تخزين Password Hash داخل Audit Logs.
+
+---
+
+## AP-1402
+
+يمكن إخفاء (Masking):
+
+* Password
+* Tokens
+* Secret Keys
+
+---
+
+# Audit Querying
+
+---
+
+## AP-1500
+
+يجب أن يسمح النظام بالبحث حسب:
+
+* User
+* Property
+* Entity Type
+* Entity Id
+* Date Range
+* Action
+
+---
+
+# Financial Integrity Rules
+
+---
+
+## AP-1600
+
+كل العمليات المالية يجب أن تكون قابلة لإعادة البناء من:
+
+* Payments
+* Settlements
+* SettlementCorrections
+* GuestCreditTransactions
+* AuditLogs
+
+---
+
+## AP-1601
+
+في حال وجود تعارض:
+
+تعتبر السجلات المالية المصدر الأساسي للحقيقة.
+
+ويستخدم Audit للتحقيق والتتبع.
+
+---
+
+# Forbidden Operations
+
+---
+
+## AP-1700
+
+ممنوع:
+
+Delete AuditLog
+
+---
+
+## AP-1701
+
+ممنوع:
+
+Update AuditLog
+
+---
+
+## AP-1702
+
+ممنوع:
+
+Disable Audit Logging
+
+---
+
+## AP-1703
+
+ممنوع:
+
+Bypass Audit During Sensitive Operations
+
+---
+
+# End Of Document
+
+
+ Business_Rules
+
+Status: APPROVED
+
+Reference Authority:
+
+* Final_Design_Decisions.md
+* Domain_Model.md
+* Database_Schema_Design.md
+
+---
+
+# 1. Purpose
+
+يحدد هذا المستند قواعد العمل الرسمية للنظام.
+
+أي Use Case أو Service أو Repository أو Flow يجب أن يلتزم بهذه القواعد.
+
+---
+
+# 2. Account Rules
+
+---
+
+## BR-001
+
+الحساب Account هو المالك الحقيقي للبيانات.
+
+---
+
+## BR-002
+
+المستخدم User لا يملك البيانات.
+
+---
+
+## BR-003
+
+يمكن للحساب امتلاك عدة منشآت.
+
+---
+
+## BR-004
+
+يمكن للحساب امتلاك عدة مستخدمين.
+
+---
+
+# 3. User Rules
+
+---
+
+## BR-100
+
+كل مستخدم ينتمي إلى حساب واحد فقط.
+
+---
+
+## BR-101
+
+كل مستخدم يمتلك Role واحداً على الأقل.
+
+---
+
+## BR-102
+
+الوصول للميزات يعتمد على:
+
+Role + Permissions
+
+---
+
+## BR-103
+
+يمكن تقييد المستخدم بمنشآت محددة.
+
+---
+
+# 4. Guest Rules
+
+---
+
+## BR-110
+
+النزيل Guest يتبع Account.
+
+---
+
+## BR-111
+
+النزيل لا يتبع Property.
+
+---
+
+## BR-112
+
+دليل النزلاء مشترك بين جميع منشآت الحساب.
+
+Shared Guest Directory.
+
+---
+
+## BR-113
+
+يمكن للنزيل إجراء عدة حجوزات.
+
+---
+
+## BR-114
+
+لا يسمح بإنشاء نزيل مكرر بنفس:
+
+* Document Number
+
+إذا كانت الوثيقة من نفس النوع.
+
+---
+
+# 5. Property Rules
+
+---
+
+## BR-200
+
+كل منشأة تتبع حساباً واحداً.
+
+---
+
+## BR-201
+
+لكل منشأة:
+
+Base Currency واحدة فقط.
+
+---
+
+## BR-202
+
+كل وحدة تنتمي إلى منشأة واحدة فقط.
+
+---
+
+## BR-203
+
+كل عملية تشغيلية يجب أن ترتبط بمنشأة.
+
+---
+
+# 6. Booking Rules
+
+---
+
+## BR-300
+
+الحجز يجب أن يحتوي:
+
+* منشأة
+* نزيل أساسي
+
+---
+
+## BR-301
+
+الحجز يمكن أن يحتوي:
+
+* عدة نزلاء
+* عدة وحدات
+
+---
+
+## BR-302
+
+الحالات الرسمية للحجز:
+
+* Reserved
+* CheckedIn
+* CheckedOut
+* Cancelled
+* NoShow
+
+---
+
+## BR-303
+
+لا يسمح بتداخل الحجوزات على نفس الوحدة.
+
+---
+
+## BR-304
+
+كل حجز يمتلك:
+
+Booking Number فريد.
+
+---
+
+## BR-305
+
+الحجز الجماعي يعتمد على:
+
+booking_guests
+
+---
+
+## BR-306
+
+الحجز متعدد الوحدات يعتمد على:
+
+booking_units
+
+---
+## BR-307
+
+يسمح بتعديل الحجز وفق الضوابط التالية:
+
+1. إذا كانت حالة الحجز:
+
+   * CheckedOut
+   * Cancelled
+   * NoShow
+
+   يمنع تعديل الحجز نهائياً.
+
+2. إذا كانت حالة الحجز:
+
+   * CheckedIn
+
+   يسمح بتعديل البيانات التشغيلية غير المالية فقط (مثل: الملاحظات، رقم الهاتف، بيانات الوثيقة).
+
+   ويمنع تعديل البيانات المؤثرة على الإقامة (مثل: التواريخ، الوحدات) أو الفاتورة مباشرة.
+
+3. إذا كانت الفاتورة قد صدرت (Issued):
+
+   لا يسمح بتعديل الحجز مباشرة بأي شكل من الأشكال.
+
+   ويجب استخدام إجراءات رسمية مخصصة مثل:
+
+   * Extend Booking
+   * Shorten Booking
+   * Unit Transfer
+
+   وذلك لضمان الحفاظ على الأثر المالي الصحيح.
+
+# 7. Unit Transfer Rules
+
+---
+
+## BR-350
+
+يسمح بنقل النزيل من وحدة إلى أخرى.
+
+---
+
+## BR-351
+
+عند النقل:
+
+لا تعدل BookingUnit القديمة.
+
+---
+
+## BR-352
+
+يجب:
+
+1. إغلاق BookingUnit القديمة.
+2. إنشاء BookingUnit جديدة.
+3. إنشاء BookingUnitTransfer.
+
+---
+
+# 8. Invoice Rules
+
+---
+
+## BR-400
+
+الفاتورة تمثل الالتزام المالي الرسمي.
+
+---
+
+## BR-401
+
+الحالات الرسمية:
+
+* Draft
+* Issued
+* PartiallyPaid
+* Paid
+* Cancelled
+
+---
+
+## BR-402
+
+إلغاء الفاتورة لا يحذفها.
+
+---
+
+## BR-403
+
+الفاتورة الملغاة لا تستقبل مدفوعات جديدة.
+
+---
+## BR-404
+
+Invoice Adjustments مسموحة فقط عندما تكون الفاتورة:
+
+Draft
+
+---
+
+## BR-405
+
+بعد إصدار الفاتورة:
+
+Issued
+
+لا يتم تعديل Invoice Adjustments مباشرة.
+
+ويجب استخدام العمليات المالية الرسمية:
+
+- Refund
+- Adjustment
+- Settlement
+
+بحسب الحالة.
+
+---
+
+## BR-406
+
+كل Invoice Adjustment يجب أن ينتج Audit Log.
+
+
+# 9. Payment Rules
+
+---
+
+## BR-500
+
+كل دفعة تسجل كسجل مستقل.
+
+---
+
+## BR-501
+
+المدفوعات غير قابلة للتعديل.
+
+---
+
+## BR-502
+
+المدفوعات غير قابلة للحذف.
+
+---
+
+## BR-503
+
+أنواع المدفوعات:
+
+* Incoming
+* Refund
+* Adjustment
+
+---
+
+## BR-504
+
+عند اكتشاف خطأ:
+
+لا تعدل الدفعة الأصلية.
+
+---
+
+بل:
+
+Refund
+
+أو
+
+Adjustment
+
+---
+
+## BR-505
+
+كل دفعة يجب أن ترتبط بمستخدم قام بإنشائها.
+
+---
+
+# 10. Guest Credit Rules
+
+---
+
+## BR-600
+
+الرصيد الدائن يخص النزيل.
+
+---
+
+## BR-601
+
+الرصيد الدائن لا ينتهي.
+
+Guest Credit Never Expires.
+
+---
+
+## BR-602
+
+الرصيد الحقيقي يحسب من:
+
+GuestCreditTransactions
+
+---
+
+## BR-603
+
+cached_balance
+
+مجرد قيمة مساعدة للأداء.
+
+---
+
+## BR-604
+
+أنواع الحركات:
+
+* CreditCreated
+* CreditUsed
+* CreditAdjustment
+
+---
+
+## BR-605
+
+لا يوجد:
+
+CreditExpired
+
+---
+
+## BR-606
+
+استخدام الرصيد الدائن لا يمثل تدفقاً نقدياً جديداً.
+
+---
+
+## BR-607
+
+عند استخدام الرصيد الدائن:
+
+1. إنشاء Credit Transaction.
+2. إنشاء Payment.
+
+   Payment Type = Incoming
+
+   Payment Method = Guest Credit
+
+3. تحديث حالة الفاتورة.
+
+---
+
+## BR-608
+
+مدفوعات Guest Credit لا تدخل ضمن الإيرادات النقدية الجديدة.
+
+---
+
+# 11. Settlement Rules
+
+---
+
+## BR-700
+
+التسوية تعالج:
+
+* Overpayment
+* Underpayment
+
+---
+
+## BR-701
+
+لا يوجد Settlement Type باسم:
+
+Adjustment
+
+---
+
+## BR-702
+
+حالات التسوية:
+
+* Pending
+* Completed
+* Cancelled
+
+---
+
+## BR-703
+
+التسوية المكتملة لا تعدل.
+
+---
+
+## BR-704
+
+عند اكتشاف خطأ:
+
+ينشأ SettlementCorrection.
+
+---
+
+## BR-705
+
+إذا كانت التسوية Pending:
+
+يسمح بتحديثها.
+
+---
+
+## BR-706
+
+إذا أصبحت التسوية Completed:
+
+يمنع تعديلها.
+
+---
+
+# 12. Expense Rules
+
+---
+
+## BR-800
+
+كل مصروف يجب أن يمتلك:
+
+* Category
+* Amount
+* Date
+
+---
+
+## BR-801
+
+لا يسمح بمصروف بدون تصنيف.
+
+---
+
+## BR-802
+
+كل مصروف يرتبط بمنشأة.
+
+---
+
+# 13. Business Day Rules
+
+---
+
+## BR-900
+
+Business Day ميزة اختيارية.
+
+---
+
+## BR-901
+
+إذا كانت:
+
+Use Business Days = Disabled
+
+فلا تستخدم الأيام التشغيلية.
+
+---
+
+## BR-902
+
+إذا كانت:
+
+Use Business Days = Enabled
+
+ترتبط العمليات المالية باليوم التشغيلي.
+
+---
+## BR-903
+
+عند تفعيل Use Business Days = Enabled:
+
+يتم ربط جميع المعاملات المالية (الدفعات، الفواتير، المصروفات) تلقائياً باليوم التشغيلي المفتوح حالياً.
+
+يتم التسجيل عبر جدول business_day_transactions.
+
+ولا يسمح بإجراء عمليات مالية إذا لم يكن هناك يوم تشغيلي مفتوح.
+
+----
+## BR-904
+
+إذا تم تغيير إعداد:
+
+Use Business Days
+
+من:
+
+Enabled
+
+إلى:
+
+Disabled
+
+فإن:
+
+1. تبقى Business Days السابقة محفوظة كما هي.
+
+2. لا يتم تعديل أو حذف الأيام التشغيلية السابقة.
+
+3. لا يتم فك ارتباط العمليات التاريخية السابقة من أيامها التشغيلية.
+
+4. العمليات المالية الجديدة بعد التعطيل لا ترتبط بأي Business Day.
+
+5. تعتمد العمليات الجديدة على Timestamp الفعلي كمرجع زمني.
+
+----
+# 14. Audit Rules
+
+---
+
+## BR-1000
+
+كل عملية مهمة يجب أن تنتج Audit Log.
+
+---
+
+## BR-1001
+
+يشمل ذلك:
+
+* Bookings
+* Payments
+* Refunds
+* Settlements
+* SettlementCorrections
+* Expenses
+* Guest Credit Operations
+
+---
+
+## BR-1002
+
+Audit Logs غير قابلة للحذف.
+
+---
+
+## BR-1003
+
+Audit Logs غير قابلة للتعديل.
+
+---
+
+# 15. Soft Delete Rules
+
+---
+
+## BR-1100
+
+يسمح بالأرشفة فقط لـ:
+
+* Users
+* Properties
+* Units
+* Guests
+* Expenses
+
+---
+
+## BR-1101
+
+لا يسمح بالأرشفة أو الحذف لـ:
+
+* Payments
+* Invoices
+* Settlements
+* SettlementCorrections
+* GuestCreditTransactions
+* AuditLogs
+
+---
+
+# 16. Reporting Rules
+
+---
+
+## BR-1200
+
+الإيراد النقدي يحسب من:
+
+Incoming Payments Only
+
+---
+
+## BR-1201
+
+Guest Credit Usage
+
+ليس إيراداً نقدياً جديداً.
+
+---
+
+## BR-1202
+
+الرصيد الدائن لا يمتلك صلاحية انتهاء.
+
+---
+
+## BR-1203
+
+لا يوجد تقرير:
+
+Expired Credits
+
+داخل MVP.
+
+---
+
+# 17. MVP Restrictions
+
+---
+
+## BR-1300
+
+غير مشمول حالياً:
+
+* Attachments
+* Reservation Hold
+* Subscription Billing
+* Public API
+* Advanced Multi Currency
+
+---
+
+# End Of Document
+
+
+
+ Database_Schema_Design
+
+
+
+Status: APPROVED
+
+Reference Authority:
+Final_Design_Decisions.md
+Domain_Model.md
+
+---
+
+# Purpose
+
+تعريف المخطط الرسمي لقاعدة البيانات.
+
+أي Migration أو Repository أو DataSource يجب أن يلتزم بهذه الوثيقة.
+
+---
+
+# Database Principles
+
+## DB-001
+
+SQLite هو محرك قاعدة البيانات الرسمي للـ MVP.
+
+---
+
+## DB-002
+
+جميع الجداول الرئيسية تحتوي:
+
+* id
+* uuid
+
+---
+
+## DB-003
+
+جميع الكيانات التشغيلية تحتوي:
+
+* created_at
+* updated_at
+
+---
+
+## DB-004
+
+الحذف الناعم:
+
+```text
+deleted_at
+```
+
+حيثما تسمح القواعد بذلك.
+
+---
+
+## DB-005
+
+Foreign Keys مفعلة دائماً.
+
+```sql
+PRAGMA foreign_keys = ON;
+```
+
+---
+
+# Accounts
+
+## accounts
+
+Fields:
+
+* id
+* uuid
+* name
+* email
+* phone
+* status
+* created_at
+* updated_at
+
+Constraints:
+
+* email UNIQUE
+
+---
+
+# Roles
+
+## roles
+
+Fields:
+
+* id
+* uuid
+* name
+* description
+* created_at
+* updated_at
+
+---
+
+# Permissions
+
+## permissions
+
+Fields:
+
+* id
+* uuid
+* code
+* name
+* description
+* created_at
+* updated_at
+
+Constraints:
+
+* code UNIQUE
+
+---
+
+# Role Permissions
+
+## role_permissions
+
+Fields:
+
+* id
+* role_id
+* permission_id
+
+Constraints:
+
+* UNIQUE(role_id, permission_id)
+
+---
+
+# Users
+
+## users
+
+Fields:
+
+* id
+* uuid
+* account_id
+* role_id
+* name
+* email
+* password_hash
+* status
+* created_at
+* updated_at
+* deleted_at
+
+Foreign Keys:
+
+* account_id → accounts.id
+* role_id → roles.id
+
+Constraints:
+
+* email UNIQUE
+
+---
+
+# Properties
+
+## property_types
+
+Fields:
+
+* id
+* name
+* description
+
+---
+
+## properties
+
+Fields:
+
+* id
+* uuid
+* account_id
+* property_type_id
+* name
+* address
+* city
+* country
+* phone
+* email
+* currency_code
+* use_business_days
+* status
+* created_at
+* updated_at
+* deleted_at
+
+Foreign Keys:
+
+* account_id → accounts.id
+* property_type_id → property_types.id
+
+---
+
+## property_settings
+
+Fields:
+
+* id
+* property_id
+* setting_key
+* setting_value
+* created_at
+* updated_at
+
+Foreign Keys:
+
+* property_id → properties.id
+
+---
+
+# Property Access
+
+## user_property_access
+
+Fields:
+
+* id
+* user_id
+* property_id
+* created_at
+
+Constraints:
+
+* UNIQUE(user_id, property_id)
+
+---
+
+# Units
+
+## unit_types
+
+Fields:
+
+* id
+* name
+* description
+
+---
+
+## units
+
+Fields:
+
+* id
+* uuid
+* property_id
+* unit_type_id
+* name
+* unit_number
+* floor_number
+* capacity
+* status
+* notes
+* created_at
+* updated_at
+* deleted_at
+
+Foreign Keys:
+
+* property_id → properties.id
+* unit_type_id → unit_types.id
+
+Indexes:
+
+* property_id
+* unit_number
+* status
+
+---
+
+# Guests
+
+IMPORTANT:
+
+Guest belongs to Account.
+
+Not Property.
+
+---
+
+## guests
+
+Fields:
+
+* id
+* uuid
+* account_id
+* full_name
+* phone
+* email
+* nationality
+* document_type
+* document_number
+* date_of_birth
+* address
+* notes
+* created_at
+* updated_at
+* deleted_at
+
+Foreign Keys:
+
+* account_id → accounts.id
+
+Indexes:
+
+* account_id
+* phone
+* document_number
+
+---
+
+## guest_contacts
+
+Fields:
+
+* id
+* guest_id
+* contact_type
+* contact_value
+* created_at
+
+Foreign Keys:
+
+* guest_id → guests.id
+
+---
+
+# Guest Credit
+
+## guest_credit_accounts
+
+Fields:
+
+* id
+* uuid
+* guest_id
+* cached_balance
+* created_at
+* updated_at
+
+Foreign Keys:
+
+* guest_id → guests.id
+
+Constraints:
+
+* guest_id UNIQUE
+
+---
+
+## guest_credit_transactions
+
+Fields:
+
+* id
+* uuid
+* guest_credit_account_id
+* amount
+* transaction_type
+* reference_type
+* reference_id
+* notes
+* created_by
+* created_at
+
+Foreign Keys:
+
+* guest_credit_account_id → guest_credit_accounts.id
+* created_by → users.id
+
+Transaction Types:
+
+* credit_created
+* credit_used
+* credit_adjustment
+
+IMPORTANT:
+
+لا يوجد:
+
+* credit_expired
+
+---
+
+# Bookings
+
+## bookings
+
+Fields:
+
+* id
+* uuid
+* property_id
+* primary_guest_id
+* booking_number
+* status
+* check_in_date
+* check_out_date
+* actual_check_in
+* actual_check_out
+* source
+* notes
+* created_by
+* created_at
+* updated_at
+
+Foreign Keys:
+
+* property_id → properties.id
+* primary_guest_id → guests.id
+* created_by → users.id
+
+Constraints:
+
+* booking_number UNIQUE
+
+---
+
+## booking_guests
+
+Fields:
+
+* id
+* booking_id
+* guest_id
+* created_at
+
+Foreign Keys:
+
+* booking_id → bookings.id
+* guest_id → guests.id
+
+IMPORTANT:
+
+لا يوجد:
+
+* is_primary_guest
+
+Primary Guest يحدد بواسطة:
+
+bookings.primary_guest_id
+
+---
+
+## booking_units
+
+Fields:
+
+* id
+* uuid
+* booking_id
+* unit_id
+* start_date
+* end_date
+* nightly_rate
+* created_at
+* updated_at
+
+Foreign Keys:
+
+* booking_id → bookings.id
+* unit_id → units.id
+
+---
+
+## booking_unit_transfers
+
+Fields:
+
+* id
+* uuid
+* booking_id
+* from_booking_unit_id
+* to_booking_unit_id
+* transfer_date
+* reason
+* created_by
+* created_at
+
+Foreign Keys:
+
+* booking_id → bookings.id
+
+---
+
+## booking_notes
+
+Fields:
+
+* id
+* booking_id
+* note
+* created_by
+* created_at
+
+---
+
+# Invoices
+
+## invoices
+
+Fields:
+
+* id
+* uuid
+* booking_id
+* invoice_number
+* total_amount
+* status
+* issued_at
+* created_at
+* updated_at
+
+Note:
+
+total_amount يتم حسابه وإنشاؤه وقت تحويل الفاتورة من Draft إلى Issued.
+
+ولا يتم تحديثه تلقائياً عند إضافة مدفوعات لاحقة.
+
+Outstanding Balance (الرصيد المستحق) يحسب ديناميكياً من:
+
+total_amount - Net Paid
+
+Foreign Keys:
+
+* booking_id → bookings.id
+
+Constraints:
+
+* invoice_number UNIQUE
+
+---
+
+## invoice_lines
+
+Fields:
+
+* id
+* invoice_id
+* description
+* quantity
+* unit_price
+* line_total
+* created_at
+
+Foreign Keys:
+
+* invoice_id → invoices.id
+
+---
+
+## invoice_adjustments
+
+Fields:
+
+* id
+* invoice_id
+* adjustment_type
+* amount
+* reason
+* created_at
+
+Foreign Keys:
+
+* invoice_id → invoices.id
+
+Types:
+
+* discount
+* manual_adjustment
+* correction
+
+---
+
+# Payments
+
+IMPORTANT
+
+MVP = Single Base Currency
+
+لا يوجد:
+
+* currency_id
+* exchange_rate
+
+---
+
+## payments
+
+Fields:
+
+* id
+* uuid
+* property_id
+* booking_id
+* invoice_id
+* amount
+* payment_method
+* payment_type
+* reference_number
+* notes
+* created_by
+* created_at
+
+Foreign Keys:
+
+* property_id → properties.id
+* booking_id → bookings.id
+* invoice_id → invoices.id
+* created_by → users.id
+
+Payment Types:
+
+* incoming
+* refund
+* adjustment
+
+---
+
+# Settlements
+
+## settlements
+
+Fields:
+
+* id
+* uuid
+* property_id
+* booking_id
+* settlement_type
+* status
+* difference_amount
+* reason
+* created_by
+* created_at
+* completed_at
+
+Settlement Types:
+
+* overpayment
+* underpayment
+
+IMPORTANT
+
+Adjustment ليس Settlement Type.
+
+---
+
+## settlement_corrections
+
+Fields:
+
+* id
+* uuid
+* settlement_id
+* correction_amount
+* reason
+* created_by
+* created_at
+
+Foreign Keys:
+
+* settlement_id → settlements.id
+
+---
+
+# Expenses
+
+## expense_categories
+
+Fields:
+
+* id
+* uuid
+* name
+* description
+* created_at
+* updated_at
+
+---
+
+## expenses
+
+Fields:
+
+* id
+* uuid
+* property_id
+* expense_category_id
+* amount
+* description
+* expense_date
+* created_by
+* created_at
+* updated_at
+* deleted_at
+
+Foreign Keys:
+
+* property_id → properties.id
+* expense_category_id → expense_categories.id
+
+---
+
+# Business Days
+
+## business_days
+
+Fields:
+
+* id
+* uuid
+* property_id
+* business_date
+* status
+* opened_by
+* closed_by
+* opened_at
+* closed_at
+* created_at
+
+Foreign Keys:
+
+* property_id → properties.id
+
+---
+
+## business_day_transactions
+
+Fields:
+
+* id
+* business_day_id
+* entity_type
+* entity_id
+* created_at
+
+---
+
+# Audit
+
+## audit_logs
+
+Fields:
+
+* id
+* uuid
+* property_id
+* user_id
+* entity_type
+* entity_id
+* action
+* description
+* old_values
+* new_values
+* created_at
+
+IMPORTANT
+
+Audit Logs Immutable
+
+---
+
+# Notifications
+
+## notifications
+
+Fields:
+
+* id
+* uuid
+* property_id
+* title
+* message
+* type
+* is_read
+* created_at
+
+---
+
+# Currency Infrastructure
+
+Post MVP Preparation Only
+
+---
+
+## currencies
+
+Fields:
+
+* id
+* code
+* name
+* symbol
+* is_default
+
+---
+
+## currency_rates
+
+Fields:
+
+* id
+* from_currency
+* to_currency
+* rate
+* effective_date
+
+IMPORTANT
+
+غير مستخدمة داخل MVP.
+
+---
+
+# App Settings
+
+## app_settings
+
+Fields:
+
+* id
+* setting_key
+* setting_value
+* created_at
+* updated_at
+
+---
+
+# Sync Queue
+
+## sync_queue
+
+Fields:
+
+* id
+* uuid
+* entity_type
+* entity_id
+* operation_type
+* payload
+* status
+* created_at
+* processed_at
+
+Purpose:
+
+Cloud Ready Architecture
+
+---
+
+# End Of Document
+
+
+
+
+
+ Development_Rules
+
+
+Status: APPROVED
+
+Reference Authority:
+
+* Final_Design_Decisions.md
+* Architecture.md
+* MVP_Scope.md
+
+---
+
+# Purpose
+
+تحدد هذه الوثيقة القواعد الإلزامية التي يجب أن يلتزم بها:
+
+* المطورون
+* وكلاء الذكاء الاصطناعي
+* أدوات التوليد البرمجي
+* أي مساهم في المشروع
+
+أثناء التنفيذ.
+
+---
+
+# Core Principle
+
+---
+
+## DR-001
+
+المطور لا يصمم النظام.
+
+---
+
+## DR-002
+
+الوثائق هي التي تصمم النظام.
+
+---
+
+## DR-003
+
+دور المطور هو التنفيذ فقط.
+
+---
+
+## DR-004
+
+لا يسمح بإضافة قرارات معمارية أو تشغيلية جديدة أثناء التنفيذ.
+
+---
+
+# Document Authority
+
+---
+
+## DR-010
+
+يجب مراجعة الوثائق قبل كتابة أي كود.
+
+---
+
+## DR-011
+
+عند وجود تعارض:
+
+يتم اتباع ترتيب الأولوية:
+
+1. Final_Design_Decisions.md
+2. Financial_Rules.md
+3. Business_Rules.md
+4. Domain_Model.md
+5. Database_Schema_Design.md
+6. Application_Flows.md
+7. Architecture.md
+8. بقية الوثائق
+
+---
+
+## DR-012
+
+إذا لم توجد إجابة داخل الوثائق:
+
+يجب إيقاف التنفيذ وطلب قرار جديد.
+
+---
+
+ممنوع التخمين.
+
+---
+
+# Scope Control
+
+---
+
+## DR-020
+
+لا يسمح بإضافة أي ميزة خارج:
+
+MVP_Scope.md
+
+---
+
+## DR-021
+
+لا يسمح بإضافة:
+
+* حقول جديدة
+* جداول جديدة
+* شاشات جديدة
+* حالات جديدة
+
+إلا إذا كانت موثقة رسمياً.
+
+---
+
+## DR-022
+
+أي عنصر خارج MVP يعتبر مرفوضاً.
+
+---
+
+# Architecture Compliance
+
+---
+
+## DR-030
+
+يجب الالتزام بـ:
+
+Clean Architecture
+
+---
+
+## DR-031
+
+يجب الالتزام بـ:
+
+Feature First Structure
+
+---
+
+## DR-032
+
+يجب الالتزام بـ:
+
+Riverpod
+
+---
+
+## DR-033
+
+يجب الالتزام بـ:
+
+SQLite
+
+كمصدر الحقيقة.
+
+---
+
+# Layer Rules
+
+---
+
+## DR-040
+
+Presentation Layer
+
+لا تحتوي Business Logic.
+
+---
+
+## DR-041
+
+Domain Layer
+
+لا تعتمد على Flutter.
+
+---
+
+## DR-042
+
+Data Layer
+
+لا تحتوي UI Logic.
+
+---
+
+## DR-043
+
+Domain Layer
+
+لا تعتمد على Data Layer.
+
+---
+
+## DR-044
+
+Dependency Direction
+
+```text id="dr001"
+Presentation
+      ↓
+
+Domain
+      ↑
+
+Data
+```
+
+---
+
+# Database Rules
+
+---
+
+## DR-050
+
+يجب الالتزام حرفياً بـ:
+
+Database_Schema_Design.md
+
+---
+
+## DR-051
+
+ممنوع إنشاء جداول غير موثقة.
+
+---
+
+## DR-052
+
+ممنوع حذف جداول موثقة.
+
+---
+
+## DR-053
+
+ممنوع تعديل العلاقات دون قرار رسمي.
+
+---
+
+## DR-054
+
+جميع الجداول الرئيسية يجب أن تحتوي:
+
+```text id="dr002"
+uuid
+```
+
+---
+
+## DR-055
+
+يجب تفعيل:
+
+```sql id="dr003"
+PRAGMA foreign_keys = ON;
+```
+
+---
+
+# Financial Rules Compliance
+
+---
+
+## DR-060
+
+القواعد المالية غير قابلة للتفاوض.
+
+---
+
+## DR-061
+
+ممنوع:
+
+Update Payment
+
+---
+
+## DR-062
+
+ممنوع:
+
+Delete Payment
+
+---
+
+## DR-063
+
+ممنوع:
+
+Delete Settlement
+
+---
+
+## DR-064
+
+ممنوع:
+
+Delete GuestCreditTransaction
+
+---
+
+## DR-065
+
+ممنوع:
+
+Delete AuditLog
+
+---
+
+## DR-066
+
+Completed Settlement
+
+لا تعدل.
+
+---
+
+## DR-067
+
+التصحيح يتم بحركة جديدة.
+
+---
+
+# Guest Rules
+
+---
+
+## DR-070
+
+Guest يتبع Account.
+
+---
+
+## DR-071
+
+Guest لا يتبع Property.
+
+---
+
+## DR-072
+
+دليل النزلاء مشترك بين جميع منشآت الحساب.
+
+---
+
+# Booking Rules
+
+---
+
+## DR-080
+
+يدعم النظام:
+
+* Group Booking
+* Multi Guest Booking
+* Multi Unit Booking
+
+---
+
+## DR-081
+
+عند نقل النزيل:
+
+لا تعدل BookingUnit القديمة.
+
+---
+
+## DR-082
+
+يجب إنشاء:
+
+BookingUnitTransfer
+
+---
+
+# Coding Standards
+
+---
+
+## DR-090
+
+ممنوع استخدام:
+
+```text id="dr004"
+dynamic
+```
+
+بدون ضرورة حقيقية.
+
+---
+
+## DR-091
+
+يفضل استخدام:
+
+```text id="dr005"
+final
+```
+
+كلما أمكن.
+
+---
+
+## DR-092
+
+ممنوع استخدام:
+
+```text id="dr006"
+print()
+```
+
+في الكود الإنتاجي.
+
+---
+
+## DR-093
+
+استخدم Logging Service موحد.
+
+---
+
+## DR-094
+
+ممنوع نسخ الكود بين Features.
+
+---
+
+# Repository Rules
+
+---
+
+## DR-100
+
+كل Feature تمتلك:
+
+Repository Contract
+
+---
+
+داخل:
+
+```text id="dr007"
+domain/repositories
+```
+
+---
+
+## DR-101
+
+Implementation داخل:
+
+```text id="dr008"
+data/repositories
+```
+
+---
+
+## DR-102
+
+ممنوع الوصول المباشر لقاعدة البيانات من UI.
+
+---
+
+# State Management Rules
+
+---
+
+## DR-110
+
+Riverpod هو الخيار الرسمي.
+
+---
+
+## DR-111
+
+ممنوع استخدام:
+
+* Provider
+* Bloc
+* GetX
+* MobX
+
+---
+
+بدون قرار تصميم جديد.
+
+---
+
+# Testing Rules
+
+---
+
+## DR-120
+
+كل Use Case يجب أن يمتلك Unit Tests.
+
+---
+
+## DR-121
+
+كل Repository يجب أن يمتلك Integration Tests.
+
+---
+
+## DR-122
+
+الاختبارات جزء من التنفيذ.
+
+وليست مرحلة لاحقة.
+
+---
+## DR-123
+
+يوصى باستخدام قاعدة بيانات SQLite في وضع In-Memory (الذاكرة) أثناء تنفيذ Integration Tests.
+
+لضمان:
+
+* عزل الاختبارات عن قاعدة البيانات الإنتاجية.
+* سرعة التنفيذ.
+* إمكانية إعادة الاختبارات دون تلويث البيانات.
+
+مثال:
+
+DatabaseHelper.instance.useInMemoryDatabase = true;
+
+
+---
+
+# AI Agent Rules
+
+---
+
+## DR-130
+
+أي وكيل ذكاء اصطناعي يجب أن:
+
+1. يقرأ الوثائق أولاً.
+2. يلتزم بالتصميم.
+3. لا يعيد التصميم.
+
+---
+
+## DR-131
+
+ممنوع على الوكيل:
+
+* اقتراح إعادة هيكلة جذرية.
+* تغيير Domain Model.
+* تغيير Database Schema.
+* إضافة Features خارج MVP.
+
+---
+
+## DR-132
+
+إذا اكتشف الوكيل تناقضاً:
+
+يجب أن يبلغ عنه.
+
+---
+
+ولا يقوم بحله تلقائياً.
+
+---
+
+# Refactoring Rules
+
+---
+
+## DR-140
+
+يسمح بتحسين الكود.
+
+---
+
+## DR-141
+
+لا يسمح بتغيير السلوك.
+
+---
+
+## DR-142
+
+لا يسمح بكسر العقود المعتمدة.
+
+---
+
+# Performance Rules
+
+---
+
+## DR-150
+
+الأداء مهم.
+
+لكن:
+
+سلامة البيانات أهم.
+
+---
+
+## DR-151
+
+ممنوع التضحية بالقواعد المالية من أجل الأداء.
+
+---
+
+# Forbidden Actions
+
+---
+
+## DR-160
+
+ممنوع:
+
+Business Logic In Widgets
+
+---
+
+## DR-161
+
+ممنوع:
+
+Direct Database Access From UI
+
+---
+
+## DR-162
+
+ممنوع:
+
+Direct Feature To Feature Coupling
+
+---
+
+## DR-163
+
+ممنوع:
+
+Circular Dependencies
+
+---
+
+## DR-164
+
+ممنوع:
+
+Bypassing Audit Logging
+
+---
+
+# Completion Criteria
+
+---
+
+## DR-170
+
+لا تعتبر المهمة مكتملة إلا إذا:
+
+* الكود يطابق الوثائق.
+* الاختبارات نجحت.
+* لا توجد أخطاء تحليلية.
+* لا توجد مخالفات معمارية.
+
+---
+
+# Final Rule
+
+---
+
+## DR-999
+
+إذا تعارض الكود مع الوثائق:
+
+الوثائق دائماً على حق.
+
+-----
+### DR-0XX
+
+Complex Business Transaction Rule
+
+If a business operation:
+
+* touches multiple repositories
+* modifies multiple aggregates
+* requires atomic execution
+* contains business orchestration
+
+Then the implementation must be placed inside a Domain Service.
+
+Do NOT:
+
+* place orchestration logic inside Repository implementations
+* place transaction coordination inside UI or Providers
+* couple Use Cases directly to SQLite transaction code
+
+Preferred Flow:
+
+UseCase
+→ Domain Service
+→ TransactionRunner
+→ Repository Contracts
+
+---
+
+# End Of Document
+
+
+
+ Domain_Model
+
+
+Status: APPROVED
+
+Reference Authority:
+Final_Design_Decisions.md
+
+---
+
+# Purpose
+
+يعرّف هذا المستند النموذج المفاهيمي الرسمي (Domain Model) للنظام.
+
+جميع:
+
+* Entities
+* Relationships
+* Use Cases
+* Repositories
+* Database Tables
+
+يجب أن تنطلق من هذا النموذج.
+
+---
+
+# Core Domain Principles
+
+---
+
+## DM-001
+
+Account هو المالك الحقيقي لجميع البيانات.
+
+---
+
+## DM-002
+
+User ليس مالكاً للبيانات.
+
+User مجرد ممثل للحساب.
+
+---
+
+## DM-003
+
+Guest يتبع Account.
+
+ولا يتبع Property.
+
+---
+
+## DM-004
+
+Property هي الحدود التشغيلية الأساسية.
+
+Operational Boundary.
+
+---
+
+## DM-005
+
+جميع العمليات المالية تعتمد على Ledger Model.
+
+---
+
+## DM-006
+
+لا يتم تخزين الأرصدة المالية المشتقة.
+
+الأرصدة تحسب من السجلات.
+
+---
+
+# Aggregate Roots
+
+الكيانات الجذرية للنظام:
+
+* Account
+* User
+* Property
+* Guest
+* Booking
+* Invoice
+* Payment
+* Settlement
+* GuestCreditAccount
+* Expense
+* BusinessDay
+
+---
+
+# Account
+
+يمثل مالك البيانات.
+
+---
+
+## Fields
+
+* id
+* uuid
+* name
+* email
+* phone
+* status
+* createdAt
+* updatedAt
+
+---
+
+## Relationships
+
+Account
+
+├── Users
+
+├── Properties
+
+├── Guests
+
+└── Settings
+
+---
+
+# User
+
+يمثل مستخدماً داخل الحساب.
+
+---
+
+## Fields
+
+* id
+* accountId
+* roleId
+* name
+* email
+* passwordHash
+* status
+
+---
+
+## Relationships
+
+User
+
+├── Account
+
+├── Role
+
+└── Accessible Properties
+
+---
+
+# Role
+
+يمثل دوراً وظيفياً.
+
+---
+
+## Examples
+
+* Owner
+* Manager
+* Receptionist
+* Accountant
+* Housekeeping
+
+---
+
+# Permission
+
+صلاحية قابلة للإسناد.
+
+---
+
+## Examples
+
+* booking.create
+* booking.edit
+* payment.create
+* report.view
+
+---
+
+# Property
+
+منشأة تشغيلية مستقلة.
+
+---
+
+## Examples
+
+* Hotel
+* Apartments
+* Resort
+* Guest House
+
+---
+
+## Fields
+
+* id
+* accountId
+* propertyTypeId
+* name
+* address
+* phone
+* email
+* currencyCode
+* useBusinessDays
+* status
+
+---
+
+## Relationships
+
+Property
+
+├── Units
+
+├── Bookings
+
+├── Expenses
+
+├── BusinessDays
+
+└── AuditLogs
+
+---
+
+# Unit
+
+وحدة قابلة للحجز.
+
+---
+
+## Fields
+
+* id
+* propertyId
+* unitTypeId
+* name
+* unitNumber
+* capacity
+* status
+
+---
+
+## Status
+
+* Available
+* Reserved
+* Occupied
+* Maintenance
+* OutOfService
+* Archived
+
+---
+
+# Guest
+
+يمثل شخصاً يمكنه إجراء حجوزات متعددة.
+
+---
+
+## Important
+
+Guest يتبع Account.
+
+وليس Property.
+
+---
+
+## Fields
+
+* id
+* accountId
+* fullName
+* phone
+* email
+* nationality
+* documentType
+* documentNumber
+* notes
+
+---
+
+## Relationships
+
+Guest
+
+├── Bookings
+
+└── GuestCreditAccount
+
+---
+
+# GuestCreditAccount
+
+حساب الرصيد الدائن للنزيل.
+
+---
+
+## Fields
+
+* id
+* guestId
+* cachedBalance
+
+---
+
+## Rule
+
+الرصيد الحقيقي:
+
+SUM(GuestCreditTransactions)
+
+---
+
+# GuestCreditTransaction
+
+دفتر حركات الرصيد الدائن.
+
+---
+
+## Types
+
+* CreditCreated
+* CreditUsed
+* CreditAdjustment
+
+---
+
+## Important
+
+لا يوجد:
+
+CreditExpired
+
+---
+
+الرصيد لا ينتهي.
+
+---
+
+# Booking
+
+الحجز الرئيسي.
+
+---
+
+## Fields
+
+* id
+* propertyId
+* primaryGuestId
+* bookingNumber
+* status
+* checkInDate
+* checkOutDate
+* actualCheckIn
+* actualCheckOut
+* source
+* notes
+
+---
+
+## Status
+
+* Reserved
+* CheckedIn
+* CheckedOut
+* Cancelled
+* NoShow
+
+---
+
+## Relationships
+
+Booking
+
+├── Property
+
+├── Guests
+
+├── Units
+
+├── Invoice
+
+├── Payments
+
+└── Settlements
+
+---
+
+# BookingGuest
+
+كيان ربط للحجوزات الجماعية.
+
+---
+
+## Fields
+
+* bookingId
+* guestId
+
+---
+
+## Rule
+
+النزيل الأساسي:
+
+Primary Guest
+
+يحدد بواسطة:
+
+Booking.primaryGuestId
+
+---
+
+ولا يستخدم:
+
+isPrimaryGuest
+
+داخل BookingGuest.
+
+---
+
+# BookingUnit
+
+ربط الحجز بالوحدات.
+
+---
+
+## Purpose
+
+يدعم:
+
+* Group Booking
+* Multi Unit Booking
+* Unit Transfer
+
+---
+
+## Fields
+
+* id
+* bookingId
+* unitId
+* startDate
+* endDate
+* nightlyRate
+
+---
+
+# BookingUnitTransfer
+
+سجل نقل الوحدات.
+
+---
+
+## Fields
+
+* id
+* bookingId
+* fromBookingUnitId
+* toBookingUnitId
+* transferDate
+* reason
+
+---
+
+## Rule
+
+النقل يتم عبر:
+
+1. Close Old BookingUnit
+2. Create New BookingUnit
+3. Create Transfer Record
+
+---
+
+# Invoice
+
+فاتورة مالية.
+
+---
+
+## Fields
+
+* id
+* bookingId
+* invoiceNumber
+* totalAmount
+* status
+
+---
+
+## Status
+
+* Draft
+* Issued
+* PartiallyPaid
+* Paid
+* Cancelled
+
+---
+
+## Relationships
+
+Invoice
+
+├── InvoiceLines
+
+├── Adjustments
+
+└── Payments
+
+---
+
+# InvoiceLine
+
+بند فاتورة.
+
+---
+
+## Fields
+
+* id
+* invoiceId
+* description
+* quantity
+* unitPrice
+* total
+
+---
+
+# InvoiceAdjustment
+
+تعديل على الفاتورة.
+
+---
+
+## Types
+
+* Discount
+* ManualAdjustment
+* Correction
+
+---
+
+# Payment
+
+حركة مالية.
+
+---
+
+## Fields
+
+* id
+* propertyId
+* bookingId
+* invoiceId
+* amount
+* paymentMethod
+* paymentType
+* referenceNumber
+
+---
+
+## Payment Types
+
+* Incoming
+* Refund
+* Adjustment
+
+---
+
+## Important
+
+Payment Immutable
+
+---
+
+# Settlement
+
+تسوية مالية.
+
+---
+
+## Purpose
+
+معالجة:
+
+* Overpayment
+* Underpayment
+
+---
+
+## Fields
+
+* id
+* bookingId
+* settlementType
+* status
+* differenceAmount
+* reason
+
+---
+
+## Types
+
+* Overpayment
+* Underpayment
+
+---
+
+## Status
+
+* Pending
+* Completed
+* Cancelled
+
+---
+
+# SettlementCorrection
+
+تصحيح تسوية.
+
+---
+
+## Fields
+
+* id
+* settlementId
+* correctionAmount
+* reason
+
+---
+
+## Important
+
+ليست نوع Settlement.
+
+---
+
+# ExpenseCategory
+
+تصنيف المصروفات.
+
+---
+
+## Examples
+
+* Maintenance
+* Cleaning
+* Utilities
+* Supplies
+* Salaries
+* Other
+
+---
+
+# Expense
+
+مصروف.
+
+---
+
+## Fields
+
+* id
+* propertyId
+* categoryId
+* amount
+* description
+* expenseDate
+
+---
+
+# BusinessDay
+
+اليوم التشغيلي.
+
+---
+
+## Fields
+
+* id
+* propertyId
+* businessDate
+* status
+* openedAt
+* closedAt
+
+---
+
+## Status
+
+* Open
+* Closed
+
+---
+
+## Rule
+
+يستخدم فقط إذا:
+
+Use Business Days = Enabled
+
+---
+
+# AuditLog
+
+سجل تدقيق.
+
+---
+
+## Fields
+
+* id
+* propertyId
+* userId
+* entityType
+* entityId
+* action
+* oldValues
+* newValues
+* createdAt
+
+---
+
+## Important
+
+Audit Logs Immutable
+
+---
+
+# Domain Hierarchy
+
+Account
+
+├── Users
+
+├── Guests
+
+├── Properties
+
+│   ├── Units
+
+│   ├── Bookings
+
+│   │   ├── BookingGuests
+
+│   │   ├── BookingUnits
+
+│   │   ├── Transfers
+
+│   │   ├── Invoice
+
+│   │   ├── Payments
+
+│   │   └── Settlements
+
+│   │
+│   └── Expenses
+
+│
+└── Audit Logs
+
+---
+
+# End Of Document
+
+
+
+
+ Error_Handling_Policy
+
+
+Status: APPROVED
+
+Reference Authority:
+
+* Architecture.md
+* Financial_Rules.md
+* Audit_Policy.md
+
+---
+
+# Purpose
+
+تحدد هذه الوثيقة السياسة الرسمية لمعالجة الأخطاء داخل النظام.
+
+أي خطأ يحدث أثناء التنفيذ يجب أن يلتزم بهذه القواعد.
+
+---
+
+# Core Principles
+
+---
+
+## EH-001
+
+الأخطاء لا يتم تجاهلها.
+
+---
+
+## EH-002
+
+الأخطاء لا يتم إخفاؤها.
+
+---
+
+## EH-003
+
+الأخطاء لا يجب أن تؤدي إلى فساد البيانات.
+
+---
+
+## EH-004
+
+سلامة البيانات أهم من إكمال العملية.
+
+---
+
+## EH-005
+
+فشل العملية أفضل من حفظ بيانات غير صحيحة.
+
+---
+
+# Error Categories
+
+---
+
+## Validation Errors
+
+أخطاء الإدخال.
+
+أمثلة:
+
+* اسم فارغ
+* مبلغ سالب
+* تاريخ غير صالح
+* رقم وثيقة مكرر
+
+---
+
+## Business Rule Errors
+
+مخالفة قواعد العمل.
+
+أمثلة:
+
+* حجز وحدة محجوزة
+* إغلاق حجز ملغي
+* استخدام رصيد دائن غير كافٍ
+
+---
+
+## Financial Errors
+
+أخطاء مالية.
+
+أمثلة:
+
+* Refund أكبر من Net Paid
+* Settlement غير صالح
+* Invoice غير متسقة
+
+---
+
+## Authorization Errors
+
+أخطاء الصلاحيات.
+
+أمثلة:
+
+* مستخدم لا يملك صلاحية Refund
+* مستخدم لا يملك صلاحية فتح يوم تشغيلي
+
+---
+
+## Database Errors
+
+أخطاء قاعدة البيانات.
+
+أمثلة:
+
+* Foreign Key Violation
+* Unique Constraint Violation
+* Transaction Failure
+
+---
+
+## System Errors
+
+أخطاء غير متوقعة.
+
+أمثلة:
+
+* Null Reference
+* Corrupted Backup
+* Disk Failure
+
+---
+
+# Standard Error Structure
+
+---
+
+## EH-100
+
+كل خطأ يجب أن يحتوي:
+
+```text id="eh001"
+Code
+Message
+Category
+Severity
+```
+
+---
+
+مثال:
+
+```text id="eh002"
+BOOKING_ALREADY_EXISTS
+```
+
+---
+
+# Severity Levels
+
+---
+
+## Info
+
+لا تؤثر على العملية.
+
+---
+
+## Warning
+
+تمنع العملية الحالية فقط.
+
+---
+
+## Error
+
+تفشل العملية.
+
+---
+
+## Critical
+
+قد تهدد سلامة البيانات.
+
+---
+
+# Domain Layer Errors
+
+---
+
+## EH-200
+
+جميع Business Rules يجب أن ترمي Failures واضحة.
+
+---
+
+## EH-201
+
+ممنوع استخدام:
+
+```text id="eh003"
+throw Exception("Something went wrong")
+```
+
+---
+
+## EH-202
+
+يجب استخدام Failure Types متخصصة.
+
+مثال:
+
+```text id="eh004"
+ValidationFailure
+AuthorizationFailure
+BusinessRuleFailure
+FinancialFailure
+```
+
+---
+
+# Database Errors
+
+---
+
+## EH-300
+
+أي عملية Database يجب أن تعالج:
+
+* Constraint Errors
+* Transaction Errors
+* Connection Errors
+
+---
+
+## EH-301
+
+عند فشل Transaction:
+
+يجب تنفيذ:
+
+```text id="eh005"
+Rollback
+```
+
+---
+
+## EH-302
+
+لا يسمح بحفظ بيانات جزئية.
+
+---
+
+# Financial Error Policy
+
+---
+
+## EH-400
+
+أي خطأ مالي يؤدي إلى فشل العملية كاملة.
+
+---
+
+## EH-401
+
+ممنوع تنفيذ جزء من العملية المالية.
+
+---
+
+مثال:
+
+```text id="eh006"
+Create Payment
+Update Invoice
+Create Audit
+```
+
+---
+
+إما أن تنجح جميعها.
+
+أو تفشل جميعها.
+
+---
+
+## EH-402
+
+العمليات المالية تنفذ داخل Transaction واحدة.
+
+---
+
+# Audit Integration
+
+---
+
+## EH-500
+
+الأخطاء الحرجة يجب تسجيلها.
+
+---
+
+## EH-501
+
+لا يتم تسجيل Validation Errors العادية داخل Audit Logs.
+
+---
+
+## EH-502
+
+يتم تسجيل:
+
+* Financial Failures
+* Security Failures
+* Restore Failures
+* Permission Violations
+
+---
+
+# UI Error Rules
+
+---
+
+## EH-600
+
+يجب عرض رسالة مفهومة للمستخدم.
+
+---
+
+## EH-601
+
+لا تعرض Stack Trace للمستخدم.
+
+---
+
+## EH-602
+
+لا تعرض SQL Errors للمستخدم.
+
+---
+
+## EH-603
+
+الرسائل يجب أن تكون قابلة للترجمة.
+
+---
+
+# Logging Policy
+
+---
+
+## EH-700
+
+جميع الأخطاء الحرجة تسجل في Logging System.
+
+---
+
+## EH-701
+
+السجل يجب أن يحتوي:
+
+* User
+* Property
+* Operation
+* Error Code
+* Timestamp
+
+---
+
+# Authorization Errors
+
+---
+
+## EH-800
+
+عند غياب الصلاحية:
+
+يجب إيقاف العملية فوراً.
+
+---
+
+## EH-801
+
+لا يسمح بتجاوز الصلاحيات.
+
+---
+
+# Validation Rules
+
+---
+
+## EH-900
+
+التحقق يتم قبل تنفيذ العملية.
+
+---
+
+## EH-901
+
+لا تصل البيانات غير الصالحة إلى Database Layer.
+
+---
+
+# Backup Errors
+
+---
+
+## EH-1000
+
+إذا فشل Backup:
+
+لا يعتبر الملف صالحاً.
+
+---
+
+## EH-1001
+
+إذا فشل Restore:
+
+لا يتم استبدال قاعدة البيانات الحالية.
+
+---
+
+# Synchronization Errors
+
+(Post MVP)
+
+---
+
+## EH-1100
+
+فشل المزامنة لا يؤدي لفقدان البيانات المحلية.
+
+---
+
+## EH-1101
+
+SQLite تبقى مصدر الحقيقة.
+
+---
+
+# Forbidden Practices
+
+---
+
+## EH-1200
+
+ممنوع:
+
+```text id="eh007"
+catch (e) {}
+```
+
+---
+
+## EH-1201
+
+ممنوع تجاهل الأخطاء.
+
+---
+
+## EH-1202
+
+ممنوع إخفاء الأخطاء الحرجة.
+
+---
+
+## EH-1203
+
+ممنوع إكمال العملية بعد فشل Transaction.
+
+---
+
+# Recovery Policy
+
+---
+
+## EH-1300
+
+إذا أمكن استعادة العملية بأمان:
+
+يعرض النظام خيار إعادة المحاولة.
+
+---
+
+## EH-1301
+
+إذا كانت سلامة البيانات مهددة:
+
+يجب إيقاف العملية.
+
+---
+
+# Final Rule
+
+---
+
+## EH-999
+
+عند التعارض بين:
+
+* تجربة المستخدم
+* سلامة البيانات
+
+تنتصر سلامة البيانات دائماً.
+
+---
+
+# End Of Document
+
+
+
+ Final_Design_Decisions
+
+Version: 2.0 Final
+
+Status: APPROVED
+
+Last Updated: Design Freeze
+
+---
+
+# Purpose
+
+تمثل هذه الوثيقة المرجع الأعلى للمشروع.
+
+في حال وجود أي تعارض أو غموض أو اختلاف تفسير بين أي وثيقتين أو أكثر، تكون هذه الوثيقة هي صاحبة القرار النهائي.
+
+---
+
+# Document Priority Order
+
+في حال التعارض يتم اعتماد الترتيب التالي:
+
+1. Final_Design_Decisions.md
+2. Financial_Rules.md
+3. Business_Rules.md
+4. Domain_Model.md
+5. Database_Schema_Design.md
+6. Application_Flows.md
+7. بقية الوثائق
+
+---
+
+# DD-001 Account Owns Data
+
+البيانات مملوكة للحساب Account.
+
+وليست مملوكة للمستخدم User.
+
+العلاقة الرسمية:
+
+Account
+├── Users
+├── Properties
+├── Guests
+└── System Data
+
+يمكن تغيير البريد الإلكتروني للحساب أو بياناته دون التأثير على البيانات التشغيلية.
+
+---
+
+# DD-002 Guest Scope
+
+النزيل يتبع الحساب Account.
+
+ولا يتبع المنشأة Property.
+
+العلاقة الرسمية:
+
+Account
+└── Guests
+
+ثم:
+
+Booking
+├── Guest
+└── Property
+
+---
+
+# DD-003 Shared Guest Directory
+
+افتراضياً:
+
+Guest Directory = Shared
+
+أي أن جميع منشآت الحساب ترى نفس قاعدة النزلاء.
+
+---
+
+يمكن إضافة وضع:
+
+Property Isolated Guests
+
+في المستقبل.
+
+---
+
+# DD-004 Multi Property Architecture
+
+النظام Multi Property من البداية.
+
+كل عملية تشغيلية مرتبطة بمنشأة محددة.
+
+---
+
+# DD-005 Multi User Architecture
+
+الحساب الواحد يدعم عدة مستخدمين.
+
+الصلاحيات تعتمد على:
+
+Role + Permissions
+
+وليس Role فقط.
+
+---
+
+# DD-006 Offline First
+
+SQLite هي المصدر الرسمي للحقيقة.
+
+Source Of Truth.
+
+---
+
+السحابة ليست المصدر الرئيسي للبيانات.
+
+---
+
+# DD-007 Cloud Ready
+
+يجب أن يكون التصميم جاهزاً لإضافة:
+
+Cloud Sync
+
+Multi Device
+
+SaaS
+
+Subscriptions
+
+دون إعادة تصميم جذرية.
+
+---
+
+# DD-008 Unit Transfer Policy
+
+عند نقل النزيل من وحدة إلى أخرى:
+
+ممنوع تعديل BookingUnit القديمة.
+
+---
+
+الآلية الرسمية:
+
+1. Close Old BookingUnit
+2. Create New BookingUnit
+3. Create BookingUnitTransfer
+
+---
+
+# DD-009 Group Booking Support
+
+الحجز يمكن أن يحتوي:
+
+* نزيل واحد
+* عدة نزلاء
+* وحدة واحدة
+* عدة وحدات
+
+---
+
+يعتمد النظام على:
+
+booking_guests
+
+booking_units
+
+---
+
+# DD-010 Invoice Lifecycle
+
+الحالات الرسمية للفاتورة:
+
+Draft
+
+Issued
+
+Partially Paid
+
+Paid
+
+Cancelled
+
+---
+
+لا يسمح بأي حالة أخرى داخل MVP.
+
+---
+
+# DD-011 Payment Immutability
+
+المدفوعات:
+
+* لا تعدل
+* لا تحذف
+
+---
+
+التصحيح يتم عبر:
+
+Refund
+
+أو
+
+Adjustment
+
+كسجل جديد.
+
+---
+
+# DD-012 Settlement Immutability
+
+التسويات المكتملة:
+
+Completed Settlements
+
+لا تعدل.
+
+---
+
+عند اكتشاف خطأ:
+
+SettlementCorrection
+
+بدلاً من تعديل السجل الأصلي.
+
+---
+
+# DD-013 Pending Settlement Updates
+
+التسوية المعلقة:
+
+Pending Settlement
+
+يسمح بتحديثها.
+
+---
+
+لأنها لم تصبح جزءاً من التاريخ المالي النهائي بعد.
+
+---
+
+# DD-014 Guest Credit Policy
+
+الرصيد الدائن:
+
+Guest Credit
+
+لا ينتهي.
+
+---
+
+Guest Credit Never Expires
+
+---
+
+# DD-015 Guest Credit Source
+
+الرصيد الدائن الحقيقي يحسب من:
+
+GuestCreditTransactions
+
+---
+
+cached_balance
+
+مجرد قيمة مساعدة للأداء.
+
+---
+
+# DD-016 Settlement Types
+
+الأنواع الرسمية فقط:
+
+Overpayment
+
+Underpayment
+
+---
+
+Adjustment
+
+ليس نوع Settlement.
+
+---
+
+Adjustment يعالج بواسطة:
+
+SettlementCorrection
+
+أو Financial Adjustment.
+
+---
+
+# DD-017 Base Currency Policy
+
+لكل منشأة:
+
+Base Currency
+
+واحدة فقط.
+
+---
+
+داخل MVP:
+
+جميع العمليات المالية تستخدم العملة الأساسية للمنشأة.
+
+---
+
+# DD-018 Advanced Multi Currency
+
+دعم العملات المتعددة الحقيقي:
+
+Post MVP
+
+---
+
+لا يسمح بإضافة:
+
+currency_id
+
+exchange_rate
+
+إلى العمليات المالية داخل MVP.
+
+---
+
+# DD-019 Expense Categorization
+
+كل مصروف يجب أن ينتمي إلى:
+
+Expense Category
+
+---
+
+ولا يسمح بمصروف بلا تصنيف.
+
+---
+
+# DD-020 Business Day Mode
+
+Business Day
+
+ميزة اختيارية.
+
+---
+
+Property Setting:
+
+Use Business Days
+
+Enabled / Disabled
+
+---
+
+# DD-021 Soft Delete Policy
+
+يسمح بالأرشفة فقط لـ:
+
+Properties
+
+Units
+
+Guests
+
+Expenses
+
+Users
+
+---
+
+# DD-022 Financial Records Protection
+
+لا يسمح بالأرشفة أو الحذف أو التعديل لـ:
+
+Payments
+
+Invoices
+
+InvoiceLines
+
+Settlements
+
+SettlementCorrections
+
+GuestCreditTransactions
+
+AuditLogs
+
+---
+
+# DD-023 Audit Immutability
+
+Audit Logs:
+
+* لا تعدل
+* لا تحذف
+
+حتى بواسطة Owner.
+
+---
+
+# DD-024 Revenue Recognition
+
+الإيراد النقدي الحقيقي:
+
+Incoming Payments Only
+
+---
+
+استخدام الرصيد الدائن:
+
+Guest Credit Usage
+
+ليس إيراداً نقدياً جديداً.
+
+---
+
+# DD-025 Guest Credit Payments
+
+عند استخدام الرصيد الدائن:
+
+1. إنشاء GuestCreditTransaction.
+2. إنشاء Payment.
+
+   Payment Type = Incoming
+
+   Payment Method = Guest Credit
+
+3. تحديث حالة الفاتورة.
+
+مدفوعات Guest Credit:
+
+- لا تعتبر إيراداً نقدياً جديداً.
+- لا تنشئ تدفقاً نقدياً جديداً.
+- تستخدم فقط لتسوية الالتزام المالي.
+
+---
+
+لكن لا يحسب كإيراد نقدي جديد.
+
+---
+
+# DD-026 Financial Atomicity
+
+كل عملية مالية مركبة يجب أن تنفذ داخل Transaction واحدة.
+
+---
+
+إما:
+
+Success
+
+أو:
+
+Rollback
+
+---
+
+# DD-027 MVP Scope Lock
+
+أي ميزة غير موجودة داخل:
+
+MVP_Scope.md
+
+لا يتم تنفيذها.
+
+---
+
+# DD-028 Reservation Hold
+
+Reservation Hold
+
+خارج MVP.
+
+Post MVP.
+
+---
+
+# DD-029 Attachments
+
+Attachment System
+
+خارج MVP.
+
+Post MVP.
+
+---
+
+# DD-030 Design Freeze Rule
+
+بعد اعتماد هذه الوثيقة:
+
+لا يسمح بإضافة أو تعديل أي قرار معماري أو مالي أو تشغيلي إلا إذا:
+
+1. تم اكتشاف تناقض حقيقي.
+2. أو تعذر تنفيذ النظام عملياً.
+3. أو تسبب القرار الحالي في فساد البيانات.
+
+عدا ذلك:
+
+يعتبر التصميم مغلقاً.
+
+---
+
+# Final Statement
+
+هذه الوثيقة هي المرجع الأعلى للمشروع.
+
+أي وكيل ذكاء اصطناعي أو مطور أو مساهم يجب أن يلتزم بها قبل الرجوع إلى أي وثيقة أخرى.
+
+### DEC-017
+
+Decision:
+اعتماد AuditLogger Abstraction كواجهة رسمية لتسجيل أحداث التدقيق.
+
+Reason:
+تقليل الترابط بين Domain Layer و Infrastructure Layer وتحسين قابلية الاختبار.
+
+Impact:
+Use Cases تعتمد على AuditLogger فقط.
+AuditService يصبح تنفيذًا للعقد.
+يحظر استدعاء AuditService مباشرة من Repository Implementations.
+
+---
+
+### DEC-018
+
+Decision:
+اعتماد Domain Services لتنفيذ العمليات التجارية المركبة التي تتضمن عدة Repositories أو عدة Aggregates.
+
+Reason:
+منع تراكم Business Logic داخل Repositories أو Use Cases كبيرة الحجم.
+
+Impact:
+العمليات البسيطة تبقى داخل Use Cases.
+العمليات المركبة تنفذ داخل domain/services.
+
+Examples:
+Create Booking
+Check-In
+Check-Out
+Settlement Processing
+Guest Credit Application
+
+---
+
+### DEC-019
+
+Decision:
+اعتماد TransactionRunner Abstraction كآلية موحدة لتنفيذ العمليات الذرية (Atomic Operations).
+
+Reason:
+ضمان تنفيذ العمليات المركبة وفق قاعدة Success Or Rollback.
+
+Impact:
+أي عملية تتطلب الذرية عبر عدة Repositories يجب أن تستخدم TransactionRunner.
+التنفيذ الفعلي يعتمد على SQLite Transactions داخل MVP.
+
+
+# End Of Document
+
+
+
+
+ Financial_Rules
+
+
+Status: APPROVED
+
+Reference Authority:
+
+* Final_Design_Decisions.md
+* Business_Rules.md
+
+---
+
+# Purpose
+
+تحدد هذه الوثيقة القواعد المالية الرسمية للنظام.
+
+أي عملية مالية داخل التطبيق يجب أن تلتزم بها.
+
+في حال التعارض:
+
+Financial_Rules.md
+
+تتقدم على:
+
+* Domain_Model.md
+* Database_Schema_Design.md
+* Application_Flows.md
+
+---
+
+# Financial Principles
+
+---
+
+## FR-001
+
+البيانات المالية غير قابلة للتعديل.
+
+Financial Records Are Immutable.
+
+---
+
+## FR-002
+
+البيانات المالية غير قابلة للحذف.
+
+---
+
+## FR-003
+
+التصحيح يتم بحركة جديدة.
+
+وليس بتعديل الحركة الأصلية.
+
+---
+
+## FR-004
+
+كل عملية مالية يجب أن تكون قابلة للتتبع.
+
+---
+
+## FR-005
+
+كل عملية مالية يجب أن تنشئ Audit Log.
+
+---
+
+## FR-006
+
+جميع العمليات المالية تنفذ داخل Database Transaction واحدة.
+
+---
+
+# Sources Of Financial Truth
+
+---
+
+## FR-100
+
+المصادر الرسمية للحقيقة المالية هي:
+
+* Payments
+* Settlements
+* SettlementCorrections
+* GuestCreditTransactions
+* Expenses
+
+---
+
+## FR-101
+
+لا يسمح بتخزين أرصدة مالية مشتقة.
+
+---
+
+## FR-102
+
+الأرصدة تحسب من السجلات.
+
+---
+
+# Payments
+
+---
+
+## FR-200
+
+كل دفعة تسجل كسجل مستقل.
+
+---
+
+## FR-201
+
+لا يسمح بتعديل Payment.
+
+---
+
+## FR-202
+
+لا يسمح بحذف Payment.
+
+---
+
+## FR-203
+
+أنواع المدفوعات الرسمية:
+
+* Incoming
+* Refund
+* Adjustment
+
+---
+
+## FR-204
+
+عند إدخال مبلغ خاطئ:
+
+لا تعدل الدفعة الأصلية.
+
+---
+
+بل:
+
+Refund
+
+أو
+
+Adjustment
+
+---
+
+## FR-205
+
+كل دفعة يجب أن ترتبط بمستخدم قام بإنشائها.
+
+---
+
+# Net Paid Calculation
+
+---
+
+## FR-300
+
+صافي المدفوعات:
+
+Net Paid
+
+=
+
+Incoming
+
+*
+
+Refund
+
+*
+
+Adjustment
+
+---
+
+## FR-301
+
+لا يخزن داخل قاعدة البيانات.
+
+---
+
+## FR-302
+
+يحسب ديناميكياً.
+
+---
+
+# Invoices
+
+---
+
+## FR-400
+
+الفاتورة تمثل الالتزام المالي الرسمي.
+
+---
+
+## FR-401
+
+الحالات الرسمية:
+
+* Draft
+* Issued
+* PartiallyPaid
+* Paid
+* Cancelled
+
+---
+
+## FR-402
+
+لا يسمح بحذف Invoice.
+
+---
+
+## FR-403
+
+إلغاء الفاتورة لا يحذفها.
+
+---
+
+# Outstanding Balance
+
+---
+
+## FR-500
+
+الرصيد المستحق:
+
+Invoice Total
+
+*
+
+Net Paid
+
+---
+
+## FR-501
+
+لا يخزن كقيمة ثابتة.
+
+---
+
+# Settlements
+
+---
+
+## FR-600
+
+التسويات تستخدم لمعالجة:
+
+* Overpayment
+* Underpayment
+
+---
+
+## FR-601
+
+لا يوجد Settlement Type باسم:
+
+Adjustment
+
+---
+
+## FR-602
+
+الحالات الرسمية:
+
+* Pending
+* Completed
+* Cancelled
+
+---
+
+## FR-603
+
+التسوية المعلقة:
+
+Pending
+
+يمكن تحديثها.
+
+---
+
+## FR-604
+
+السبب:
+
+لم تصبح جزءاً من التاريخ المالي النهائي بعد.
+
+---
+
+## FR-605
+
+التسوية المكتملة:
+
+Completed
+
+لا تعدل.
+
+---
+
+# Settlement Corrections
+
+---
+
+## FR-700
+
+عند اكتشاف خطأ في تسوية مكتملة:
+
+ينشأ SettlementCorrection.
+
+---
+
+## FR-701
+
+لا يتم تعديل التسوية الأصلية.
+
+---
+
+## FR-702
+
+كل SettlementCorrection يجب أن يحتوي:
+
+* Correction Amount
+* Reason
+* User
+* Timestamp
+
+---
+
+# Guest Credit
+
+---
+
+## FR-800
+
+الرصيد الدائن يخص النزيل.
+
+---
+
+## FR-801
+
+الرصيد الدائن لا ينتهي.
+
+Guest Credit Never Expires.
+
+---
+
+## FR-802
+
+الرصيد الحقيقي:
+
+SUM(GuestCreditTransactions)
+
+---
+
+## FR-803
+
+cached_balance
+
+قيمة مساعدة للأداء فقط.
+
+---
+
+## FR-804
+
+أنواع الحركات:
+
+* CreditCreated
+* CreditUsed
+* CreditAdjustment
+
+---
+
+## FR-805
+
+لا يوجد:
+
+CreditExpired
+
+---
+
+# Creating Guest Credit
+
+---
+
+## FR-900
+
+يمكن إنشاء رصيد دائن من:
+
+* Overpayment
+* Manual Credit
+* Credit Adjustment
+
+---
+
+# Using Guest Credit
+
+---
+
+## FR-1000
+
+عند استخدام الرصيد:
+
+1. إنشاء GuestCreditTransaction.
+2. إنشاء Payment.
+
+   Payment Type = Incoming
+
+   Payment Method = Guest Credit
+
+3. تحديث حالة الفاتورة.
+---
+
+## FR-1001
+
+لا يتم تعديل الحركات السابقة.
+
+---
+
+## FR-1002
+
+استخدام الرصيد الدائن ليس إيراداً نقدياً جديداً.
+
+---
+
+## FR-1003
+
+يستخدم لتسوية الالتزام المالي فقط.
+
+---
+
+# Revenue
+
+---
+
+## FR-1100
+
+الإيراد النقدي:
+
+Incoming Payments Only
+
+---
+
+## FR-1101
+
+مدفوعات Guest Credit
+
+لا تعتبر تدفقاً نقدياً جديداً.
+
+---
+
+## FR-1102
+
+Refunds
+
+تخصم من الإيراد الصافي.
+
+---
+
+# Expenses
+
+---
+
+## FR-1200
+
+كل مصروف يسجل كسجل مستقل.
+
+---
+
+## FR-1201
+
+كل مصروف يجب أن يمتلك:
+
+* Category
+* Amount
+* Date
+
+---
+
+## FR-1202
+
+لا يسمح بمصروف بلا تصنيف.
+
+---
+
+# Profit
+
+---
+
+## FR-1300
+
+الربح:
+
+Revenue
+
+*
+
+Expenses
+
+---
+
+## FR-1301
+
+يحسب للفترة المحددة فقط.
+
+---
+
+# Business Days
+
+---
+
+## FR-1400
+
+إذا كانت:
+
+Use Business Days = Enabled
+
+ترتبط العمليات المالية باليوم التشغيلي.
+
+---
+
+## FR-1401
+
+إذا كانت:
+
+Disabled
+
+يعتمد النظام على التاريخ الفعلي.
+
+---
+
+## FR-1402
+
+تعطيل Use Business Days لا يؤثر على السجلات التاريخية السابقة.
+
+وتبقى جميع الروابط التاريخية مع Business Days محفوظة لأغراض التدقيق والتقارير.
+
+---
+
+# Currency Rules
+
+---
+
+## FR-1500
+
+لكل منشأة:
+
+Base Currency واحدة.
+
+---
+
+## FR-1501
+
+داخل MVP:
+
+جميع العمليات المالية تستخدم العملة الأساسية للمنشأة.
+
+---
+
+## FR-1502
+
+لا يتم تخزين:
+
+* currency_id
+* exchange_rate
+
+داخل Payments أو Invoices أو Expenses في MVP.
+
+---
+
+## FR-1503
+
+Advanced Multi Currency
+
+خارج MVP.
+
+---
+
+# Audit Requirements
+
+---
+
+## FR-1600
+
+يجب تسجيل Audit Log لكل:
+
+* Payment
+* Refund
+* Adjustment
+* Settlement
+* SettlementCorrection
+* GuestCreditTransaction
+* Expense
+
+---
+
+# Forbidden Operations
+
+---
+
+## FR-1700
+
+ممنوع:
+
+Delete Payment
+
+---
+
+## FR-1701
+
+ممنوع:
+
+Delete Settlement
+
+---
+
+## FR-1702
+
+ممنوع:
+
+Delete GuestCreditTransaction
+
+---
+
+## FR-1703
+
+ممنوع:
+
+Delete AuditLog
+
+---
+
+## FR-1704
+
+ممنوع:
+
+Update Completed Settlement
+
+---
+
+## FR-1705
+
+ممنوع:
+
+Direct Balance Modification
+
+---
+
+# Golden Rules
+
+---
+
+## FR-2000
+
+الحركات المالية لا تعدل.
+
+---
+
+## FR-2001
+
+الحركات المالية لا تحذف.
+
+---
+
+## FR-2002
+
+التصحيح يتم بحركة جديدة.
+
+---
+
+## FR-2003
+
+الرصيد يحسب من السجلات.
+
+---
+
+## FR-2004
+
+كل شيء قابل للتتبع.
+
+---
+
+## FR-2005
+
+سلامة البيانات أهم من سهولة التنفيذ.
+
+---
+
+# End Of Document
+
+
+
+MVP_Scope
+
+
+Status: APPROVED
+
+Reference Authority:
+
+* Final_Design_Decisions.md
+* Domain_Model.md
+* Business_Rules.md
+
+---
+
+# Purpose
+
+تحدد هذه الوثيقة الحدود الرسمية للنسخة الأولى (MVP).
+
+أي ميزة غير موجودة داخل هذه الوثيقة:
+
+لا يتم تنفيذها.
+
+حتى لو كانت موجودة في التصميم المستقبلي.
+
+---
+
+# MVP Definition
+
+الهدف من MVP:
+
+إنشاء نظام مستقر وموثوق لإدارة:
+
+* المنشآت السياحية
+* الشقق المفروشة
+* النزل
+* الفنادق الصغيرة
+* المجمعات السكنية السياحية
+
+مع إدارة:
+
+* الحجوزات
+* النزلاء
+* الفواتير
+* المدفوعات
+* التسويات
+* الرصيد الدائن
+* المصروفات
+* التقارير الأساسية
+
+---
+
+# Included Features
+
+---
+
+## MVP-001 Account Management
+
+مدعوم:
+
+* إنشاء الحساب
+* تعديل الحساب
+* عرض الحساب
+
+غير مدعوم:
+
+* الاشتراكات
+* الفوترة السحابية
+
+---
+
+## MVP-002 User Management
+
+مدعوم:
+
+* إنشاء المستخدم
+* تعديل المستخدم
+* تعطيل المستخدم
+* أرشفة المستخدم
+
+مدعوم:
+
+* Roles
+* Permissions
+
+---
+
+## MVP-003 Property Management
+
+مدعوم:
+
+* إنشاء منشأة
+* تعديل منشأة
+* أرشفة منشأة
+
+مدعوم:
+
+* Property Types
+* Property Settings
+
+---
+
+## MVP-004 Unit Management
+
+مدعوم:
+
+* إنشاء وحدة
+* تعديل وحدة
+* أرشفة وحدة
+
+مدعوم:
+
+* Unit Types
+* Capacity
+* Availability Status
+
+---
+
+## MVP-005 Guest Management
+
+مدعوم:
+
+* إنشاء نزيل
+* تعديل نزيل
+* أرشفة نزيل
+
+مدعوم:
+
+* Guest Directory Shared Across Properties
+
+---
+
+## MVP-006 Booking Management
+
+مدعوم:
+
+* Create Booking
+* Edit Booking
+* Cancel Booking
+* Check In
+* Check Out
+* No Show
+
+---
+
+مدعوم:
+
+* Group Booking
+* Multi Guest Booking
+* Multi Unit Booking
+
+---
+
+## MVP-007 Unit Transfer
+
+مدعوم:
+
+* نقل النزيل بين الوحدات
+* BookingUnitTransfer Tracking
+
+---
+
+## MVP-008 Invoice Management
+
+مدعوم:
+
+* Create Invoice
+* Draft Invoice
+* Issue Invoice
+* Cancel Invoice
+
+---
+
+مدعوم:
+
+* Invoice Lines
+* Invoice Adjustments
+
+---
+
+## MVP-009 Payments
+
+مدعوم:
+
+* Incoming Payments
+* Refunds
+* Adjustments
+
+---
+
+غير مدعوم:
+
+* Online Payment Gateway
+* POS Integration
+
+---
+
+## MVP-010 Settlements
+
+مدعوم:
+
+* Overpayment
+* Underpayment
+
+---
+
+مدعوم:
+
+* Pending Settlement Updates
+* Settlement Completion
+* Settlement Corrections
+
+---
+
+## MVP-011 Guest Credit
+
+مدعوم:
+
+* Create Credit
+* Use Credit
+* Credit Adjustment
+
+---
+
+غير موجود:
+
+* Credit Expiration
+
+---
+
+## MVP-012 Expenses
+
+مدعوم:
+
+* Expense Categories
+* Expense Tracking
+* Expense Reports
+
+---
+
+## MVP-013 Business Days
+
+مدعوم:
+
+* Open Business Day
+* Close Business Day
+
+---
+
+ميزة اختيارية.
+
+يمكن تعطيلها لكل منشأة.
+
+---
+
+## MVP-014 Reports
+
+مدعوم:
+
+### Occupancy Reports
+
+* Occupancy Rate
+* Available Units
+* Active Bookings
+
+---
+
+### Revenue Reports
+
+* Revenue
+* Refunds
+* Net Revenue
+
+---
+
+### Expense Reports
+
+* By Category
+* By Property
+* By Date Range
+
+---
+
+### Settlement Reports
+
+* Pending Settlements
+* Completed Settlements
+* Settlement Corrections
+
+---
+
+### Guest Credit Reports
+
+* Current Balances
+* Transaction History
+
+---
+
+## MVP-015 Audit System
+
+مدعوم بالكامل.
+
+يشمل:
+
+* Financial Auditing
+* Operational Auditing
+* Security Auditing
+
+---
+
+## MVP-016 Backup & Restore
+
+مدعوم:
+
+* Database Backup
+* Database Restore
+
+---
+
+## MVP-017 Export
+
+مدعوم:
+
+* PDF Export
+* Excel Export
+
+Note:
+
+* جدول notifications داخل قاعدة البيانات مخصص للإشعارات الداخلية (داخل التطبيق فقط).
+
+  ولا يشمل Email أو SMS أو Push Notifications (خارج MVP).
+
+* جداول currencies و currency_rates موجودة في المخطط فقط للتحضير للمرحلة القادمة (Post MVP).
+
+  ولا تستخدم في أي عملية مالية داخل MVP.
+
+---
+
+# Explicitly Excluded
+
+---
+
+## EX-001 Cloud Synchronization
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-002 SaaS Subscriptions
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-003 Multi Device Sync
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-004 Public API
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-005 Online Payments
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-006 Payment Gateways
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-007 POS Integration
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-008 Reservation Hold
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-009 Waitlist System
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-010 Attachment System
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-011 Document Storage
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-012 Email Notifications
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-013 SMS Notifications
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-014 Push Notifications
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-015 Advanced Multi Currency
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-016 Advanced Accounting
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-017 Tax Engine
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-018 AI Features
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-019 Multi Account Hierarchy
+
+مؤجل.
+
+Post MVP.
+
+---
+
+## EX-020 Franchise Management
+
+مؤجل.
+
+Post MVP.
+
+---
+
+# Technical Scope
+
+---
+
+## Included
+
+* Flutter
+* SQLite
+* Clean Architecture
+* Feature First Structure
+* Riverpod
+* UUID
+* Soft Delete
+* Audit Logging
+
+---
+
+## Excluded
+
+* Microservices
+* Distributed Databases
+* Event Sourcing
+* Message Brokers
+
+---
+
+# Success Criteria
+
+يعتبر MVP ناجحاً إذا استطاع المستخدم:
+
+1. إدارة أكثر من منشأة.
+2. إدارة أكثر من مستخدم.
+3. إدارة النزلاء بشكل مشترك.
+4. إنشاء الحجوزات الفردية والجماعية.
+5. نقل النزلاء بين الوحدات.
+6. إصدار الفواتير.
+7. تسجيل المدفوعات.
+8. معالجة التسويات.
+9. استخدام الرصيد الدائن.
+10. إدارة المصروفات.
+11. استخراج التقارير الأساسية.
+12. إنشاء نسخة احتياطية واستعادتها.
+
+---
+
+# Scope Lock Rule
+
+أي ميزة غير موجودة داخل هذا المستند:
+
+* لا تنفذ.
+* لا تصمم.
+* لا تضاف إلى قاعدة البيانات.
+* لا تنشأ لها شاشة.
+* لا تنشأ لها Use Cases.
+
+إلا بعد إصدار:
+
+MVP Scope Version جديد.
+
+---
+
+# End Of Document
+
+
+
+
+
+Permissions_Matrix
+
+
+Status: APPROVED
+
+Reference Authority:
+
+* Final_Design_Decisions.md
+* Business_Rules.md
+
+---
+
+# Purpose
+
+تحدد هذه الوثيقة الصلاحيات الرسمية للأدوار داخل النظام.
+
+الصلاحيات الفعلية تعتمد على:
+
+Role + Permissions
+
+لكن هذه الوثيقة تحدد القيم الافتراضية.
+
+---
+
+# Roles
+
+الأدوار الافتراضية داخل النظام:
+
+1. Owner
+2. Manager
+3. Receptionist
+4. Accountant
+5. Housekeeping
+
+---
+
+# Permission Categories
+
+---
+
+## Account Management
+
+* account.view
+* account.edit
+
+---
+
+## User Management
+
+* user.view
+* user.create
+* user.edit
+* user.archive
+
+---
+
+## Property Management
+
+* property.view
+* property.create
+* property.edit
+* property.archive
+
+---
+
+## Unit Management
+
+* unit.view
+* unit.create
+* unit.edit
+* unit.archive
+
+---
+
+## Guest Management
+
+* guest.view
+* guest.create
+* guest.edit
+* guest.archive
+
+---
+
+## Booking Management
+
+* booking.view
+* booking.create
+* booking.edit
+* booking.cancel
+* booking.checkin
+* booking.checkout
+* booking.transfer
+
+---
+
+## Invoice Management
+
+* invoice.view
+* invoice.create
+* invoice.edit_draft
+* invoice.issue
+* invoice.cancel
+
+---
+
+## Payment Management
+
+* payment.view
+* payment.create
+* payment.refund
+* payment.adjustment
+
+---
+
+## Settlement Management
+
+* settlement.view
+* settlement.complete
+* settlement.correct
+
+---
+
+## Guest Credit
+
+* guest_credit.view
+* guest_credit.create
+* guest_credit.use
+* guest_credit.adjust
+
+---
+
+## Expense Management
+
+* expense.view
+* expense.create
+* expense.edit
+* expense.archive
+
+---
+
+## Reports
+
+* report.occupancy
+* report.revenue
+* report.expenses
+* report.settlements
+* report.guest_credit
+
+---
+
+## Business Day
+
+* business_day.open
+* business_day.close
+
+---
+
+## Backup & Restore
+
+* backup.create
+* backup.restore
+
+---
+
+## Export
+
+* export.pdf
+* export.excel
+
+---
+
+## System Settings
+
+* settings.view
+* settings.edit
+
+---
+
+# Default Role Matrix
+
+| Permission Category | Owner | Manager | Receptionist | Accountant | Housekeeping |
+| ------------------- | ----- | ------- | ------------ | ---------- | ------------ |
+| Account View        | ✓     | ✗       | ✗            | ✗          | ✗            |
+| Account Edit        | ✓     | ✗       | ✗            | ✗          | ✗            |
+| User Management     | ✓     | ✗       | ✗            | ✗          | ✗            |
+| Property Management | ✓     | ✓       | ✗            | ✗          | ✗            |
+| Unit Management     | ✓     | ✓       | ✗            | ✗          | ✗            |
+| Guest Management    | ✓     | ✓       | ✓            | ✗          | ✗            |
+| Booking Management  | ✓     | ✓       | ✓            | ✗          | ✗            |
+| Invoice Management  | ✓     | ✓       | ✓            | ✓          | ✗            |
+| Payment View        | ✓     | ✓       | ✓            | ✓          | ✗            |
+| Payment Create      | ✓     | ✓       | ✓            | ✓          | ✗            |
+| Refund              | ✓     | ✓       | ✗            | ✓          | ✗            |
+| Adjustment          | ✓     | ✓       | ✗            | ✓          | ✗            |
+| Settlement Complete | ✓     | ✓       | ✗            | ✓          | ✗            |
+| Settlement Correct  | ✓     | ✓       | ✗            | ✓          | ✗            |
+| Guest Credit Use    | ✓     | ✓       | ✓            | ✓          | ✗            |
+| Guest Credit Create | ✓     | ✓       | ✗            | ✓          | ✗            |
+| Expense View        | ✓     | ✓       | ✗            | ✓          | ✗            |
+| Expense Create      | ✓     | ✓       | ✗            | ✓          | ✗            |
+| Expense Archive     | ✓     | ✓       | ✗            | ✗          | ✗            |
+| Reports             | ✓     | ✓       | ✗            | ✓          | ✗            |
+| Business Day Open   | ✓     | ✓       | ✗            | ✓          | ✗            |
+| Business Day Close  | ✓     | ✓       | ✗            | ✓          | ✗            |
+| Backup              | ✓     | ✗       | ✗            | ✗          | ✗            |
+| Restore             | ✓     | ✗       | ✗            | ✗          | ✗            |
+| Export              | ✓     | ✓       | ✓            | ✓          | ✗            |
+| Settings            | ✓     | ✓       | ✗            | ✗          | ✗            |
+
+Note:
+
+صلاحية settings.edit تشير إلى:
+
+تعديل إعدادات المنشأة (Property Settings).
+
+مثل:
+
+* use_business_days
+* الإعدادات التشغيلية الأخرى داخل property_settings
+
+ولا تشمل إعدادات النظام العامة (System Settings) خارج MVP.
+
+---
+
+# Financial Restrictions
+
+---
+
+## PR-001
+
+حتى Owner لا يستطيع:
+
+* Delete Payment
+* Delete Settlement
+* Delete SettlementCorrection
+* Delete GuestCreditTransaction
+* Delete AuditLog
+
+---
+
+## PR-002
+
+حتى Owner لا يستطيع:
+
+Update Completed Settlement
+
+---
+
+## PR-003
+
+حتى Owner لا يستطيع:
+
+Direct Balance Modification
+
+---
+
+# Property Access Rules
+
+---
+
+## PR-100
+
+المستخدم يرى فقط المنشآت المسموح له بها.
+
+---
+
+## PR-101
+
+Owner يمكنه رؤية جميع منشآت الحساب.
+
+---
+
+## PR-102
+
+يمكن تقييد Manager أو Accountant أو Receptionist بمنشآت محددة.
+
+---
+
+# Guest Access Rules
+
+---
+
+## PR-200
+
+دليل النزلاء مشترك على مستوى الحساب.
+
+---
+
+## PR-201
+
+إذا امتلك المستخدم حق:
+
+guest.view
+
+فيمكنه الوصول لجميع النزلاء ضمن الحساب.
+
+---
+
+# Audit Rules
+
+---
+
+## PR-300
+
+كل العمليات الحساسة يجب أن تسجل داخل Audit Logs.
+
+---
+
+## PR-301
+
+لا توجد صلاحية تسمح بحذف Audit Logs.
+
+---
+
+## PR-302
+
+لا توجد صلاحية تسمح بتعديل Audit Logs.
+
+---
+
+# Future Roles (Post MVP)
+
+قد تضاف مستقبلاً:
+
+* Auditor
+* Regional Manager
+* Franchise Manager
+* Support Agent
+
+---
+
+لكنها ليست جزءاً من MVP.
+
+---
+
+# End Of Document
+
+
+
+
+
+
+Project_Structure_v1
+
+
+Status: APPROVED
+
+Reference Authority:
+
+* Architecture.md
+* Domain_Model.md
+* Final_Design_Decisions.md
+
+---
+
+# Purpose
+
+تمثل هذه الوثيقة الهيكل الرسمي للمشروع.
+
+أي ملف جديد يجب أن يلتزم بهذا الهيكل.
+
+أي وكيل ذكاء اصطناعي أو مطور يجب أن يستخدم هذه الوثيقة عند إنشاء الملفات.
+
+---
+
+# Root Structure
+
+```text
+lib/
+
+├── main.dart
+
+├── app/
+
+├── core/
+
+├── shared/
+
+└── features/
+```
+
+---
+
+# App Layer
+
+```text
+app/
+
+├── app.dart
+
+├── router.dart
+
+├── theme/
+│   ├── app_theme.dart
+│   ├── colors.dart
+│   ├── typography.dart
+│   └── dimensions.dart
+
+├── localization/
+│   ├── ar.arb
+│   ├── en.arb
+│   ├── fr.arb
+│   ├── localization_service.dart
+│   └── generated/
+
+└── config/
+    ├── app_constants.dart
+    ├── app_config.dart
+    └── default_settings.dart
+```
+
+Purpose:
+
+* Application Bootstrap
+* Routing
+* Theme
+* Localization
+* Global Configuration
+
+---
+
+# Core Layer
+
+```text
+core/
+
+├── common/
+
+├── database/
+
+├── network/
+
+├── services/
+
+├── providers/
+
+├── security/
+
+└── errors/
+```
+
+---
+
+# Core/Common
+
+```text
+common/
+
+├── enums/
+
+├── models/
+
+├── utils/
+
+└── extensions/
+```
+
+---
+
+# Common Enums
+
+```text
+common/enums/
+
+├── booking_status.dart
+
+├── invoice_status.dart
+
+├── payment_method.dart
+
+├── payment_type.dart
+
+├── settlement_status.dart
+
+├── settlement_type.dart
+
+├── unit_status.dart
+
+├── user_status.dart
+
+├── business_day_status.dart
+
+└── user_role.dart
+```
+
+---
+
+# Common Models
+
+```text
+common/models/
+
+├── money.dart
+
+├── currency.dart
+
+├── pagination.dart
+
+├── audit_entry.dart
+
+└── app_user.dart
+```
+
+---
+
+# Database Layer
+
+```text
+database/
+
+├── database_helper.dart
+
+├── schema/
+
+├── migrations/
+
+└── seeders/
+```
+
+---
+
+# Database Schema
+
+```text
+schema/
+
+├── accounts_table.dart
+
+├── users_table.dart
+
+├── roles_table.dart
+
+├── permissions_table.dart
+
+├── role_permissions_table.dart
+
+├── user_property_access_table.dart
+
+├── property_types_table.dart
+
+├── properties_table.dart
+
+├── property_settings_table.dart
+
+├── unit_types_table.dart
+
+├── units_table.dart
+
+├── guests_table.dart
+
+├── guest_contacts_table.dart
+
+├── guest_credit_accounts_table.dart
+
+├── guest_credit_transactions_table.dart
+
+├── bookings_table.dart
+
+├── booking_guests_table.dart
+
+├── booking_units_table.dart
+
+├── booking_unit_transfers_table.dart
+
+├── booking_notes_table.dart
+
+├── invoices_table.dart
+
+├── invoice_lines_table.dart
+
+├── invoice_adjustments_table.dart
+
+├── payments_table.dart
+
+├── settlements_table.dart
+
+├── settlement_corrections_table.dart
+
+├── expense_categories_table.dart
+
+├── expenses_table.dart
+
+├── business_days_table.dart
+
+├── business_day_transactions_table.dart
+
+├── notifications_table.dart
+
+├── audit_logs_table.dart
+
+├── currencies_table.dart
+
+├── currency_rates_table.dart
+
+├── app_settings_table.dart
+
+└── sync_queue_table.dart
+```
+
+---
+
+# Migrations
+
+```text
+migrations/
+
+├── migration_v1.dart
+
+├── migration_registry.dart
+```
+
+---
+
+# Seeders
+
+```text
+seeders/
+
+├── default_admin_seeder.dart
+
+├── default_roles_seeder.dart
+
+├── default_permissions_seeder.dart
+
+├── default_settings_seeder.dart
+
+└── default_currency_seeder.dart
+```
+
+---
+
+# Network Layer
+
+```text
+network/
+
+├── api_client.dart
+
+├── connectivity_service.dart
+
+├── sync_service.dart
+
+├── sync_queue_service.dart
+
+└── remote_config_service.dart
+```
+
+---
+
+# Core Services
+
+```text
+services/
+
+├── audit_service.dart
+
+├── backup_service.dart
+
+├── restore_service.dart
+
+├── export_service.dart
+
+├── import_service.dart
+
+├── pdf_service.dart
+
+├── excel_service.dart
+
+└── notification_service.dart
+```
+
+---
+
+# Security
+
+```text
+security/
+
+├── encryption_service.dart
+
+├── password_hasher.dart
+
+├── biometric_service.dart
+
+└── secure_storage_service.dart
+```
+
+---
+
+# Errors
+
+```text
+errors/
+
+├── failure.dart
+
+├── exceptions.dart
+
+└── error_handler.dart
+```
+
+---
+
+# Shared Layer
+
+```text
+shared/
+
+├── widgets/
+
+├── layouts/
+
+└── constants/
+```
+
+---
+
+# Shared Widgets
+
+```text
+widgets/
+
+├── app_button.dart
+
+├── app_text_field.dart
+
+├── app_dialog.dart
+
+├── app_dropdown.dart
+
+├── loading_widget.dart
+
+├── empty_widget.dart
+
+├── money_text.dart
+
+└── app_data_table.dart
+```
+
+---
+
+# Shared Layouts
+
+```text
+layouts/
+
+├── dashboard_layout.dart
+
+└── auth_layout.dart
+```
+
+---
+
+# Features Layer
+
+```text
+features/
+
+├── auth/
+
+├── accounts/
+
+├── users/
+
+├── properties/
+
+├── units/
+
+├── guests/
+
+├── guest_credit/
+
+├── bookings/
+
+├── invoices/
+
+├── payments/
+
+├── settlements/
+
+├── expenses/
+
+├── reports/
+
+├── notifications/
+
+├── business_days/
+
+├── dashboard/
+
+└── settings/
+```
+
+---
+
+# Standard Feature Structure
+
+كل Feature يجب أن تتبع هذا الهيكل:
+
+```text
+feature_name/
+
+├── feature.dart
+
+├── data/
+│
+├── domain/
+│
+└── presentation/
+```
+
+---
+
+# Data Layer Structure
+
+```text
+data/
+
+├── datasources/
+
+├── models/
+
+└── repositories/
+```
+
+---
+
+# Domain Layer Structure
+
+```text
+domain/
+
+├── entities/
+
+├── repositories/
+
+├── usecases/
+
+└── services/
+```
+
+---
+
+# Presentation Layer Structure
+
+```text
+presentation/
+
+├── screens/
+
+├── widgets/
+
+├── dialogs/
+
+└── providers/
+```
+
+---
+
+# Example Feature
+
+```text
+bookings/
+
+├── feature.dart
+
+├── data/
+│   ├── datasources/
+│   ├── models/
+│   └── repositories/
+
+├── domain/
+│   ├── entities/
+│   ├── repositories/
+│   ├── usecases/
+│   └── services/
+
+└── presentation/
+    ├── screens/
+    ├── widgets/
+    ├── dialogs/
+    └── providers/
+```
+
+---
+
+# Tests Structure
+
+```text
+test/
+
+├── unit/
+
+├── integration/
+
+└── widget/
+```
+
+---
+
+# Architectural Rules
+
+---
+
+## PS-001
+
+ممنوع إنشاء:
+
+```text
+core/widgets
+```
+
+---
+
+جميع العناصر المشتركة داخل:
+
+```text
+shared/widgets
+```
+
+---
+
+## PS-002
+
+كل Feature يجب أن تحتوي:
+
+```text
+feature.dart
+```
+
+---
+
+## PS-003
+
+Feature لا تستورد ملفات داخلية من Feature أخرى.
+
+---
+
+التواصل يتم عبر:
+
+* Repository Contracts
+* Public Exports
+
+---
+
+## PS-004
+
+Entities داخل:
+
+```text
+domain/entities
+```
+
+فقط.
+
+---
+
+## PS-005
+
+Use Cases داخل:
+
+```text
+domain/usecases
+```
+
+فقط.
+
+---
+
+## PS-006
+
+Business Logic داخل:
+
+```text
+domain/services
+```
+
+و
+
+```text
+domain/usecases
+```
+
+فقط.
+
+---
+
+## PS-007
+
+UI Logic داخل:
+
+```text
+presentation
+```
+
+فقط.
+
+---
+
+# End Of Document
+
+
+
+
+
+ UI_UX_Guidelines
+
+
+Status: APPROVED
+
+Reference Authority:
+
+* Architecture.md
+* Business_Rules.md
+* Financial_Rules.md
+* MVP_Scope.md
+
+---
+
+# Purpose
+
+تحدد هذه الوثيقة قواعد تصميم واجهات وتجربة المستخدم داخل النظام.
+
+أي شاشة أو Widget أو Dialog يجب أن تلتزم بهذه القواعد.
+
+---
+
+# Design Philosophy
+
+---
+
+## UX-001
+
+الوضوح أهم من الجمال.
+
+---
+
+## UX-002
+
+السرعة أهم من المؤثرات البصرية.
+
+---
+
+## UX-003
+
+تقليل الأخطاء أهم من تقليل الكود.
+
+---
+
+## UX-004
+
+يجب أن يتمكن الموظف الجديد من تعلم الأساسيات خلال دقائق.
+
+---
+
+# Target Users
+
+---
+
+النظام مصمم أساساً لـ:
+
+* Owner
+* Manager
+* Receptionist
+* Accountant
+
+---
+
+وليس للمستخدمين التقنيين.
+
+---
+
+# General Principles
+
+---
+
+## UX-100
+
+يجب أن تكون جميع الشاشات قابلة للاستخدام بالماوس ولوحة المفاتيح.
+
+---
+
+## UX-101
+
+يجب دعم الشاشات الصغيرة والمتوسطة والكبيرة.
+
+---
+
+## UX-102
+
+لا تعتمد العمليات الحرجة على السحب والإفلات.
+
+---
+
+## UX-103
+
+الأزرار الأساسية يجب أن تكون واضحة دائماً.
+
+---
+
+# Navigation Rules
+
+---
+
+## UX-200
+
+التنقل الرئيسي يعتمد على:
+
+Sidebar Navigation
+
+---
+
+## UX-201
+
+القائمة الجانبية تعرض فقط الميزات المسموح بها للمستخدم.
+
+---
+
+## UX-202
+
+يجب إظهار اسم المنشأة الحالية دائماً.
+
+---
+
+## UX-203
+
+إذا كان الحساب يمتلك عدة منشآت:
+
+يجب أن يكون التبديل بينها واضحاً وسريعاً.
+
+---
+
+# Dashboard Rules
+
+---
+
+## UX-300
+
+تعرض Dashboard:
+
+* الحجوزات النشطة
+* الوحدات المشغولة
+* الوحدات المتاحة
+* الإيرادات
+* المصروفات
+* التنبيهات
+
+---
+
+## UX-301
+
+لا تعرض معلومات تقنية للمستخدم.
+
+---
+
+# Form Design Rules
+
+---
+
+## UX-400
+
+جميع الحقول الإلزامية يجب تمييزها بوضوح.
+
+---
+
+## UX-401
+
+يجب التحقق من المدخلات قبل الحفظ.
+
+---
+
+## UX-402
+
+يجب عرض رسالة الخطأ بالقرب من الحقل المسبب لها.
+
+---
+
+## UX-403
+
+لا يسمح بحفظ نموذج يحتوي أخطاء تحقق.
+
+---
+
+## UX-404
+
+يجب المحافظة على البيانات المدخلة عند فشل الحفظ.
+
+---
+
+# Booking Screens
+
+---
+
+## UX-500
+
+إنشاء الحجز يجب أن يكون تدفقاً بسيطاً.
+
+---
+
+الحد الأدنى:
+
+1. اختيار المنشأة.
+2. اختيار النزيل.
+3. اختيار التواريخ.
+4. اختيار الوحدة.
+5. الحفظ.
+
+---
+
+## UX-501
+
+يجب إظهار الوحدات غير المتاحة بوضوح.
+
+---
+
+## UX-502
+
+عند وجود تعارض حجز:
+
+يعرض السبب مباشرة.
+
+---
+
+## UX-503
+
+يجب إظهار:
+
+* Check In
+* Check Out
+
+بوضوح داخل شاشة الحجز.
+
+---
+
+# Guest Screens
+
+---
+
+## UX-600
+
+قبل إنشاء نزيل جديد:
+
+يجب توفير البحث أولاً.
+
+---
+
+## UX-601
+
+البحث في النزلاء يجب أن يكون سريعاً.
+
+---
+
+## UX-602
+
+يجب البحث باستخدام:
+
+* الاسم
+* الهاتف
+* رقم الوثيقة
+
+---
+
+## UX-603
+
+يجب تنبيه المستخدم عند احتمال وجود نزيل مكرر.
+
+---
+
+# Invoice Screens
+
+---
+
+## UX-700
+
+يجب عرض حالة الفاتورة بوضوح.
+
+---
+
+الحالات:
+
+* Draft
+* Issued
+* Partially Paid
+* Paid
+* Cancelled
+
+---
+
+## UX-701
+
+الفواتير الملغاة يجب أن تكون مميزة بصرياً.
+
+---
+
+## UX-702
+
+الفاتورة المدفوعة بالكامل:
+
+تكون للقراءة فقط.
+
+---
+
+# Payment Screens
+
+---
+
+## UX-800
+
+يجب إظهار:
+
+* إجمالي الفاتورة
+* المدفوع
+* المتبقي
+
+بوضوح قبل تسجيل أي دفعة.
+
+---
+
+## UX-801
+
+يجب طلب تأكيد إضافي عند:
+
+* Refund
+* Adjustment
+
+---
+
+## UX-802
+
+لا يسمح بتعديل المدفوعات من الواجهة.
+
+---
+
+## UX-803
+
+يجب عرض سبب عدم إمكانية تعديل المدفوعات.
+
+---
+
+# Settlement Screens
+
+---
+
+## UX-900
+
+يجب عرض:
+
+* Settlement Type
+* Status
+* Difference Amount
+
+بوضوح.
+
+---
+
+## UX-901
+
+Completed Settlement
+
+للقراءة فقط.
+
+---
+
+## UX-902
+
+Settlement Correction
+
+يجب أن يتطلب سبباً إلزامياً.
+
+---
+
+# Guest Credit Screens
+
+---
+
+## UX-1000
+
+يجب عرض:
+
+Current Credit Balance
+
+بشكل واضح.
+
+---
+
+## UX-1001
+
+عند استخدام الرصيد:
+
+يجب عرض الرصيد قبل وبعد العملية.
+
+---
+
+## UX-1002
+
+يجب عرض سجل الحركات بالكامل.
+
+---
+
+## UX-1003
+
+لا يوجد مفهوم:
+
+Expired Credit
+
+---
+
+# Expense Screens
+
+---
+
+## UX-1100
+
+يجب اختيار Category قبل الحفظ.
+
+---
+
+## UX-1101
+
+يجب عرض إجمالي المصروفات للفترة المختارة.
+
+---
+
+# Reports Screens
+
+---
+
+## UX-1200
+
+كل تقرير يجب أن يدعم:
+
+* Date Range
+* Export PDF
+* Export Excel
+
+---
+
+## UX-1201
+
+التقارير يجب أن تكون قابلة للطباعة.
+
+---
+
+## UX-1202
+
+الأرقام المالية يجب أن تستخدم العملة الأساسية للمنشأة.
+
+---
+
+# Business Day Screens
+
+---
+
+## UX-1300
+
+إذا كانت Business Days معطلة:
+
+لا تظهر عناصرها في الواجهة.
+
+---
+
+## UX-1301
+
+يجب إظهار حالة اليوم التشغيلي الحالية بوضوح.
+
+---
+
+# Confirmation Dialog Rules
+
+---
+
+## UX-1400
+
+يجب طلب تأكيد عند:
+
+* Cancel Booking
+* Refund
+* Adjustment
+* Complete Settlement
+* Restore Database
+* Archive Record
+
+---
+
+## UX-1401
+
+رسائل التأكيد يجب أن تشرح النتيجة المتوقعة.
+
+---
+
+# Notifications
+
+---
+
+## UX-1500
+
+أنواع الإشعارات:
+
+* Success
+* Info
+* Warning
+* Error
+
+---
+
+## UX-1501
+
+لا تستخدم الإشعارات لعرض أخطاء تقنية.
+
+---
+
+# Loading States
+
+---
+
+## UX-1600
+
+كل عملية طويلة يجب أن تعرض حالة تحميل.
+
+---
+
+## UX-1601
+
+يجب منع النقرات المكررة أثناء التنفيذ.
+
+---
+
+# Empty States
+
+---
+
+## UX-1700
+
+الشاشات الفارغة يجب أن تعرض:
+
+* سبب الفراغ
+* الإجراء التالي المقترح
+
+---
+
+# Accessibility
+
+---
+
+## UX-1800
+
+يجب دعم:
+
+* أحجام شاشة مختلفة
+* تكبير النص
+* التنقل بلوحة المفاتيح
+
+---
+
+## UX-1801
+
+لا يعتمد التمييز على اللون فقط.
+
+---
+
+# Localization
+
+---
+
+## UX-1900
+
+يجب دعم:
+
+* العربية
+* الإنجليزية
+* الفرنسية
+
+---
+
+## UX-1901
+
+جميع النصوص قابلة للترجمة.
+
+---
+
+## UX-1902
+
+ممنوع كتابة نصوص ثابتة داخل Widgets.
+
+---
+
+# Forbidden UI Practices
+
+---
+
+## UX-2000
+
+ممنوع إخفاء الأخطاء الحرجة.
+
+---
+
+## UX-2001
+
+ممنوع السماح بتعديل سجلات مالية غير قابلة للتعديل.
+
+---
+
+## UX-2002
+
+ممنوع عرض أزرار لعمليات لا يملك المستخدم صلاحيتها.
+
+---
+
+## UX-2003
+
+ممنوع تنفيذ عمليات حساسة دون تأكيد.
+
+---
+
+# Final Rule
+
+---
+
+## UX-999
+
+إذا تعارضت سهولة الاستخدام مع سلامة البيانات أو القواعد المالية:
+
+تنتصر سلامة البيانات دائماً.
+
+---
+
+# End Of Document
