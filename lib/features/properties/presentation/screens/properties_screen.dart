@@ -442,7 +442,9 @@ class _PropertyFormDialogState extends ConsumerState<PropertyFormDialog> {
                       _selectedPropertyTypeId = types.first.id;
                     }
                     return DropdownButtonFormField<int>(
-                      initialValue: _selectedPropertyTypeId,
+                      initialValue: _selectedPropertyTypeId != null && types.any((t) => t.id == _selectedPropertyTypeId)
+                          ? _selectedPropertyTypeId
+                          : (types.isNotEmpty ? types.first.id : null),
                       decoration: const InputDecoration(labelText: 'تصنيف المنشأة (Property Classification) *'),
                       items: types.map((t) {
                         return DropdownMenuItem<int>(

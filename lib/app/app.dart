@@ -14,6 +14,7 @@ import '../features/guests/presentation/screens/guests_screen.dart';
 import '../features/invoices/presentation/screens/invoices_screen.dart';
 import '../features/bookings/presentation/screens/bookings_screen.dart';
 import '../features/properties/presentation/providers/property_providers.dart';
+import '../features/properties/domain/entities/property.dart';
 
 class PropertyManagementSystemApp extends StatelessWidget {
   const PropertyManagementSystemApp({Key? key}) : super(key: key);
@@ -228,6 +229,25 @@ class _PMSDashboardHomeScreenState extends ConsumerState<PMSDashboardHomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<List<Property>>>(propertiesListProvider, (previous, next) {
+      next.whenData((props) {
+        final currentActive = ref.read(selectedPropertyProvider);
+        if (currentActive != null) {
+          final activeId = currentActive.id;
+          final exists = props.any((p) => p.id == activeId);
+          if (!exists) {
+            if (props.isNotEmpty) {
+              ref.read(selectedPropertyProvider.notifier).state = props.first;
+            } else {
+              ref.read(selectedPropertyProvider.notifier).state = null;
+            }
+          }
+        } else if (props.isNotEmpty) {
+          ref.read(selectedPropertyProvider.notifier).state = props.first;
+        }
+      });
+    });
+
     final textTheme = Theme.of(context).textTheme;
     final propertiesAsync = ref.watch(propertiesListProvider);
     final activeProperty = ref.watch(selectedPropertyProvider);
@@ -281,7 +301,9 @@ class _PMSDashboardHomeScreenState extends ConsumerState<PMSDashboardHomeScreen>
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<int?>(
-                          value: activeProperty?.id,
+                          value: activeProperty != null && props.any((p) => p.id == activeProperty.id)
+                              ? activeProperty.id
+                              : null,
                           hint: const Text('اختر منشأة نشطة', style: TextStyle(color: Colors.white38, fontSize: 12)),
                           dropdownColor: const Color(0xFF0F172A),
                           isExpanded: true,

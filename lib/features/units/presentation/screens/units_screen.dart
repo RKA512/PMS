@@ -450,7 +450,9 @@ class _UnitFormDialogState extends ConsumerState<UnitFormDialog> {
                       _selectedUnitTypeId = types.first.id;
                     }
                     return DropdownButtonFormField<int>(
-                      initialValue: _selectedUnitTypeId,
+                      initialValue: _selectedUnitTypeId != null && types.any((t) => t.id == _selectedUnitTypeId)
+                          ? _selectedUnitTypeId
+                          : (types.isNotEmpty ? types.first.id : null),
                       decoration: const InputDecoration(labelText: 'فئة/نوع الغرفة (Unit Category) *'),
                       items: types.map((t) {
                         return DropdownMenuItem<int>(

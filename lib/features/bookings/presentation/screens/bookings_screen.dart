@@ -651,7 +651,9 @@ class _BookingFormDialogState extends ConsumerState<BookingFormDialog> {
                 guestsAsync.when(
                   data: (guests) {
                     return DropdownButtonFormField<int>(
-                      initialValue: _selectedPrimaryGuestId,
+                      initialValue: _selectedPrimaryGuestId != null && guests.any((g) => g.id == _selectedPrimaryGuestId)
+                          ? _selectedPrimaryGuestId
+                          : null,
                       decoration: const InputDecoration(
                         labelText: 'النزيل الرئيسي (Primary Guest) *',
                         border: OutlineInputBorder(),
