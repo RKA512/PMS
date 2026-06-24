@@ -3,15 +3,18 @@
 library;
 
 import '../../../../core/errors/failure.dart';
+import '../../../../core/contracts/audit_logger.dart';
+import '../../data/models/unit_model.dart';
 import '../entities/unit.dart';
 import '../repositories/unit_repository.dart';
 
 class UpdateUnit {
   final UnitRepository repository;
+  final AuditLogger auditService;
 
-  UpdateUnit(this.repository);
+  UpdateUnit(this.repository, this.auditService);
 
-  Future<void> call(Unit unit) async {
+  Future<void> call({required Unit unit, required int userId}) async {
     if (unit.id == null) {
       throw const ValidationFailure(
         code: 'UNIT_ID_MISSING',
@@ -44,6 +47,21 @@ class UpdateUnit {
       updatedAt: DateTime.now(),
     );
 
+    final oldUnit = await repository.getUnitById(updated.id!);
+    final oldMap = oldUnit != null ? UnitModel.toMap(oldUnit) : null;
+
     await repository.updateUnit(updated);
+
+    // Log Audit Event
+    await auditService.log(
+      propertyId: updated.propertyId,
+      userId: userId,
+      entityType: 'Unit',
+      entityId: updated.id!,
+      action: 'Update Unit',
+      description: 'Updated unit ${updated.name} (Room: ${updated.unitNumber})',
+      oldValues: oldMap,
+      newValues: UnitModel.toMap(updated),
+    );
   }
 }

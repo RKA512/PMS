@@ -251,9 +251,9 @@ class _InvoiceListTableState extends ConsumerState<InvoiceListTable> {
               loading: () => const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
               error: (e, s) => const Text('خطأ', style: TextStyle(color: Colors.red, fontSize: 12)),
               data: (bal) {
-                final isZero = bal == 0.0;
+                final isZero = bal.minorUnits == 0;
                 return Text(
-                  isZero ? 'لا يوجد قيود' : '${bal.toStringAsFixed(2)}',
+                  isZero ? 'لا يوجد قيود' : bal.format(''),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: isZero ? Colors.green[600] : const Color(0xFFEF4444),

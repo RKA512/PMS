@@ -6,10 +6,12 @@ library;
 
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../database/database_helper.dart';
 import '../common/models/audit_entry.dart';
+import '../contracts/audit_logger.dart';
 
-class AuditService {
+class AuditService implements AuditLogger {
   static final AuditService instance = AuditService._init();
   final _uuid = const Uuid();
 
@@ -136,3 +138,8 @@ class AuditService {
     }).toList();
   }
 }
+
+// Global Riverpod provider for AuditService
+final auditServiceProvider = Provider<AuditLogger>((ref) {
+  return AuditService.instance;
+});

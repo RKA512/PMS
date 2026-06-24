@@ -3,13 +3,16 @@
 library;
 
 import '../../../../core/errors/failure.dart';
+import '../../../../core/contracts/audit_logger.dart';
+import '../../data/models/guest_model.dart';
 import '../entities/guest.dart';
 import '../repositories/guest_repository.dart';
 
 class UpdateGuest {
   final GuestRepository _repository;
+  final AuditLogger _auditService;
 
-  UpdateGuest(this._repository);
+  UpdateGuest(this._repository, this._auditService);
 
   Future<void> call(Guest guest, int userId) async {
     if (guest.id == null) {
@@ -78,6 +81,20 @@ class UpdateGuest {
       updatedAt: DateTime.now(),
     );
 
+    final oldGuest = await _repository.getGuestById(updated.id!);
+    final oldMap = oldGuest != null ? GuestModel.toMap(oldGuest) : null;
+
     await _repository.updateGuest(updated, userId);
+
+    // Log Audit Event
+    await _auditService.log(
+      userId: userId,
+      entityType: 'Guest',
+      entityId: updated.id!,
+      action: 'Update Guest',
+      description: 'حدّث بيانات الضيف: ${updated.fullName} (Updated guest: ${updated.fullName})',
+      oldValues: oldMap,
+      newValues: GuestModel.toMap(updated),
+    );
   }
 }

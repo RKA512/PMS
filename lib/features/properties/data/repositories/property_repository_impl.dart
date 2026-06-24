@@ -5,7 +5,6 @@
 library;
 
 import '../../../../core/database/database_helper.dart';
-import '../../../../core/services/audit_service.dart';
 import '../../domain/entities/property.dart';
 import '../../domain/entities/property_type.dart';
 import '../../domain/entities/property_settings.dart';
@@ -61,18 +60,6 @@ class PropertyRepositoryImpl implements PropertyRepository {
   Future<int> createProperty(Property property) async {
     final db = await _dbHelper.database;
     final id = await db.insert('properties', PropertyModel.toMap(property));
-    
-    // Log Audit Event
-    await AuditService.instance.log(
-      propertyId: id,
-      userId: 1, // Defaulting to system admin/owner for initial setup flow as standard
-      entityType: 'Property',
-      entityId: id,
-      action: 'Create Property',
-      description: 'Created property: ${property.name} with currency ${property.currencyCode}',
-      newValues: PropertyModel.toMap(property..copyWith(id: id)),
-    );
-
     return id;
   }
 
@@ -81,26 +68,11 @@ class PropertyRepositoryImpl implements PropertyRepository {
     if (property.id == null) return;
     final db = await _dbHelper.database;
     
-    final oldProperty = await getPropertyById(property.id!);
-    final oldMap = oldProperty != null ? PropertyModel.toMap(oldProperty) : null;
-
     await db.update(
       'properties',
       PropertyModel.toMap(property),
       where: 'id = ?',
       whereArgs: [property.id],
-    );
-
-    // Log Audit Event
-    await AuditService.instance.log(
-      propertyId: property.id!,
-      userId: 1,
-      entityType: 'Property',
-      entityId: property.id!,
-      action: 'Update Property',
-      description: 'Updated property: ${property.name}',
-      oldValues: oldMap,
-      newValues: PropertyModel.toMap(property),
     );
   }
 
@@ -109,10 +81,6 @@ class PropertyRepositoryImpl implements PropertyRepository {
     final db = await _dbHelper.database;
     final nowString = DateTime.now().toIso8601String();
     
-    final property = await getPropertyById(id);
-    if (property == null) return;
-    final oldMap = PropertyModel.toMap(property);
-
     await db.update(
       'properties',
       {
@@ -122,22 +90,6 @@ class PropertyRepositoryImpl implements PropertyRepository {
       },
       where: 'id = ?',
       whereArgs: [id],
-    );
-
-    // Log Audit Event
-    await AuditService.instance.log(
-      propertyId: id,
-      userId: 1,
-      entityType: 'Property',
-      entityId: id,
-      action: 'Archive Property',
-      description: 'Archived property: ${property.name}',
-      oldValues: oldMap,
-      newValues: {
-        'deleted_at': nowString,
-        'status': 'Archived',
-        'updated_at': nowString,
-      },
     );
   }
 

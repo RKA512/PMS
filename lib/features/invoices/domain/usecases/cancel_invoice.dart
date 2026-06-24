@@ -5,12 +5,14 @@ library;
 
 import '../../../../core/common/enums/invoice_status.dart';
 import '../../../../core/errors/failure.dart';
+import '../../../../core/contracts/audit_logger.dart';
 import '../repositories/invoice_repository.dart';
 
 class CancelInvoice {
   final InvoiceRepository _repository;
+  final AuditLogger _auditService;
 
-  CancelInvoice(this._repository);
+  CancelInvoice(this._repository, this._auditService);
 
   Future<void> call(int invoiceId, int userId) async {
     final invoice = await _repository.getInvoiceById(invoiceId);
@@ -36,5 +38,13 @@ class CancelInvoice {
     }
 
     await _repository.cancelInvoice(invoiceId, userId);
+
+    await _auditService.log(
+      userId: userId,
+      entityType: 'Invoice',
+      entityId: invoiceId,
+      action: 'Cancel Invoice',
+      description: 'تم إلغاء الفاتورة بالكامل وتغيير حالتها إلى ملغاة.',
+    );
   }
 }

@@ -5,14 +5,17 @@ library;
 
 import 'package:uuid/uuid.dart';
 import '../../../../core/errors/failure.dart';
+import '../../../../core/contracts/audit_logger.dart';
+import '../../data/models/property_model.dart';
 import '../entities/property.dart';
 import '../repositories/property_repository.dart';
 
 class CreateProperty {
   final PropertyRepository repository;
+  final AuditLogger auditService;
   final _uuid = const Uuid();
 
-  CreateProperty(this.repository);
+  CreateProperty(this.repository, this.auditService);
 
   Future<int> call({
     required int accountId,
@@ -25,6 +28,7 @@ class CreateProperty {
     String? email,
     required String currencyCode,
     required bool useBusinessDays,
+    required int userId,
   }) async {
     if (name.trim().isEmpty) {
       throw const ValidationFailure(
@@ -57,6 +61,21 @@ class CreateProperty {
       updatedAt: now,
     );
 
-    return await repository.createProperty(property);
+    final id = await repository.createProperty(property);
+
+    // Log Audit Event
+    await auditService.log(
+      propertyId: id,
+      userId: userId,
+      entityType: 'Property',
+      entityId: id,
+      action: 'Create Property',
+      description: 'Created property: ${property.name} with currency ${property.currencyCode}',
+      newValues: PropertyModel.toMap(
+        property.copyWith(id: id),
+      ),
+    );
+
+    return id;
   }
 }

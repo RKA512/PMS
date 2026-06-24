@@ -6,16 +6,18 @@ library;
 
 import 'package:uuid/uuid.dart';
 import '../../../../core/errors/failure.dart';
-import '../../../../core/services/audit_service.dart';
 import '../../../../core/common/enums/booking_status.dart';
+import '../../../../core/contracts/audit_logger.dart';
 import '../entities/booking.dart';
 import '../repositories/booking_repository.dart';
+import '../services/booking_domain_service.dart';
 
 class CreateBookingUseCase {
   final BookingRepository _repository;
-  final AuditService _auditService;
+  final BookingDomainService _bookingDomainService;
+  final AuditLogger _auditService;
 
-  CreateBookingUseCase(this._repository, this._auditService);
+  CreateBookingUseCase(this._repository, this._bookingDomainService, this._auditService);
 
   Future<Booking> execute({
     required int propertyId,
@@ -74,18 +76,22 @@ class CreateBookingUseCase {
       updatedAt: now,
     );
 
-    // Save Booking
+    // Save Booking via BookingDomainService
     final List<int> allGuests = [primaryGuestId, ...additionalGuestIds];
-    final savedBooking = await _repository.createBooking(booking, unitIds, allGuests);
+    final savedBooking = await _bookingDomainService.createBookingAggregate(
+      booking: booking,
+      unitIds: unitIds,
+      guestIds: allGuests,
+    );
 
-    // Implements Flow 04 step 8 (Audit Logging)
+    // Flow 04 step 8 (Audit Logging) moved to Use Case
     await _auditService.log(
-      propertyId: propertyId,
+      propertyId: savedBooking.propertyId,
       userId: createdByUserId,
       entityType: 'booking',
       entityId: savedBooking.id!,
       action: 'Create Booking',
-      description: 'إنشاء حجز جديد برقم ${savedBooking.bookingNumber} للنزيل $primaryGuestId',
+      description: 'إنشاء حجز جديد برقم ${savedBooking.bookingNumber} للنزيل ${savedBooking.primaryGuestId}',
       newValues: {
         'booking_number': savedBooking.bookingNumber,
         'units': unitIds,

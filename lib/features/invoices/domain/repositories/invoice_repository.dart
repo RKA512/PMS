@@ -40,9 +40,8 @@ abstract class InvoiceRepository {
   /// Cancels the Invoice, transitioning its state to Cancelled (only if not Paid).
   Future<void> cancelInvoice(int invoiceId, int userId);
 
-  /// Calculates the Outstanding Balance dynamically from the database.
-  /// Formula: total_amount - Net Paid (incoming payments - refunds).
-  Future<Money> calculateOutstandingBalance(int invoiceId);
+  /// Fetches the Invoice ID associated with a given line item.
+  Future<int?> getInvoiceIdByLineId(int lineId);
 
   /// Fetches bookings that do not have an invoice yet.
   Future<List<Map<String, dynamic>>> getUninvoicedBookings();

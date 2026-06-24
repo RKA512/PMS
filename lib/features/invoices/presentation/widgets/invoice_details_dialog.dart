@@ -316,7 +316,7 @@ class _InvoiceDetailsDialogContentState extends ConsumerState<InvoiceDetailsDial
                                 _buildDetailMetricCell(
                                   'الرصيد المستقيل الصافي',
                                   outstandingAsync.when(
-                                    data: (bal) => Money.fromDouble(bal).format(''),
+                                    data: (bal) => bal.format(''),
                                     error: (e, s) => 'خطأ',
                                     loading: () => '...',
                                   ),

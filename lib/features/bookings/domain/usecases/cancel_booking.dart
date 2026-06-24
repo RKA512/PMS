@@ -4,14 +4,14 @@
 library;
 
 import '../../../../core/errors/failure.dart';
-import '../../../../core/services/audit_service.dart';
 import '../../../../core/common/enums/booking_status.dart';
+import '../../../../core/contracts/audit_logger.dart';
 import '../entities/booking.dart';
 import '../repositories/booking_repository.dart';
 
 class CancelBookingUseCase {
   final BookingRepository _repository;
-  final AuditService _auditService;
+  final AuditLogger _auditService;
 
   CancelBookingUseCase(this._repository, this._auditService);
 
@@ -40,7 +40,6 @@ class CancelBookingUseCase {
       updatedByUserId: updatedByUserId,
     );
 
-    // Audit Logging
     await _auditService.log(
       propertyId: booking.propertyId,
       userId: updatedByUserId,

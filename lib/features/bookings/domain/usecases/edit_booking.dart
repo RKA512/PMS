@@ -5,14 +5,14 @@
 library;
 
 import '../../../../core/errors/failure.dart';
-import '../../../../core/services/audit_service.dart';
 import '../../../../core/common/enums/booking_status.dart';
+import '../../../../core/contracts/audit_logger.dart';
 import '../entities/booking.dart';
 import '../repositories/booking_repository.dart';
 
 class EditBookingUseCase {
   final BookingRepository _repository;
-  final AuditService _auditService;
+  final AuditLogger _auditService;
 
   EditBookingUseCase(this._repository, this._auditService);
 
@@ -70,7 +70,7 @@ class EditBookingUseCase {
 
     await _repository.updateBooking(updatedBooking);
 
-    // Audit Logging
+    // Audit Logging moved to Use Case
     await _auditService.log(
       propertyId: existingBooking.propertyId,
       userId: updatedByUserId,

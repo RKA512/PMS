@@ -5,6 +5,7 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/services/audit_service.dart';
 import '../../domain/entities/property.dart';
 import '../../domain/entities/property_type.dart';
 import '../../domain/entities/property_settings.dart';
@@ -28,15 +29,24 @@ final getPropertiesUseCaseProvider = Provider<GetProperties>((ref) {
 });
 
 final createPropertyUseCaseProvider = Provider<CreateProperty>((ref) {
-  return CreateProperty(ref.watch(propertyRepositoryProvider));
+  return CreateProperty(
+    ref.watch(propertyRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
 });
 
 final updatePropertyUseCaseProvider = Provider<UpdateProperty>((ref) {
-  return UpdateProperty(ref.watch(propertyRepositoryProvider));
+  return UpdateProperty(
+    ref.watch(propertyRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
 });
 
 final archivePropertyUseCaseProvider = Provider<ArchiveProperty>((ref) {
-  return ArchiveProperty(ref.watch(propertyRepositoryProvider));
+  return ArchiveProperty(
+    ref.watch(propertyRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
 });
 
 final getPropertyTypesUseCaseProvider = Provider<GetPropertyTypes>((ref) {

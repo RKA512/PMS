@@ -4,15 +4,18 @@ library;
 
 import 'package:uuid/uuid.dart';
 import '../../../../core/errors/failure.dart';
+import '../../../../core/contracts/audit_logger.dart';
+import '../../data/models/guest_model.dart';
 import '../entities/guest.dart';
 import '../entities/guest_contact.dart';
 import '../repositories/guest_repository.dart';
 
 class CreateGuest {
   final GuestRepository _repository;
+  final AuditLogger _auditService;
   final _uuid = const Uuid();
 
-  CreateGuest(this._repository);
+  CreateGuest(this._repository, this._auditService);
 
   Future<int> call({
     required int accountId,
@@ -92,6 +95,18 @@ class CreateGuest {
       contacts: contacts,
     );
 
-    return await _repository.createGuest(guest, userId);
+    final id = await _repository.createGuest(guest, userId);
+
+    // Log Audit Event
+    await _auditService.log(
+      userId: userId,
+      entityType: 'Guest',
+      entityId: id,
+      action: 'Create Guest',
+      description: 'أنشأ الضيف: ${guest.fullName} (Created guest: ${guest.fullName})',
+      newValues: GuestModel.toMap(guest)..['id'] = id,
+    );
+
+    return id;
   }
 }

@@ -15,9 +15,18 @@ class DatabaseHelper {
 
   bool useInMemoryDatabase = false;
 
+  Future<DatabaseExecutor> get executor async {
+    final txn = Zone.current[#sqlite_txn];
+    if (txn != null && txn is DatabaseExecutor) {
+      return txn;
+    }
+    return await database;
+  }
+
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDB(useInMemoryDatabase ? ':memory:' : 'property_management_system.db');
+    await _ensureSeeds(_database!);
     return _database!;
   }
 
@@ -608,6 +617,13 @@ class DatabaseHelper {
   Future<void> _seedInitialData(Database db) async {
     final now = DateTime.now().toIso8601String();
 
+    // Seed default Accounts to satisfy property account_id foreign key constraint
+    await db.rawInsert('''
+      INSERT INTO accounts (id, uuid, name, email, phone, status, created_at, updated_at)
+      VALUES 
+        (1, 'acc-system', 'System Default Account', 'system@example.com', '0000000000', 'Active', '$now', '$now')
+    ''');
+
     // Seed default Roles
     await db.rawInsert('''
       INSERT INTO roles (uuid, name, description, created_at, updated_at)
@@ -617,6 +633,13 @@ class DatabaseHelper {
         ('r3-receptionist', 'Receptionist', 'Checks, reservations, guest registry and billing operations', '$now', '$now'),
         ('r4-accountant', 'Accountant', 'Financial reporting, ledger verification, payments and expenses', '$now', '$now'),
         ('r5-housekeeping', 'Housekeeping', 'Unit service, maintenance and room cleanliness status updates', '$now', '$now')
+    ''');
+
+    // Seed default Users to satisfy audit log user_id foreign key constraint
+    await db.rawInsert('''
+      INSERT INTO users (id, uuid, account_id, role_id, name, email, password_hash, status, created_at, updated_at)
+      VALUES 
+        (1, 'usr-system', 1, 1, 'System Administrator', 'admin@example.com', 'system-default-hash', 'Active', '$now', '$now')
     ''');
 
     // Seed default Property Types
@@ -659,6 +682,56 @@ class DatabaseHelper {
         ('USD', 'United States Dollar', '\$', 0),
         ('EUR', 'Euro', '€', 0)
     ''');
+  }
+
+  Future<void> _ensureSeeds(Database db) async {
+    final accounts = await db.rawQuery('SELECT COUNT(*) as count FROM accounts');
+    final accountCount = Sqflite.firstIntValue(accounts) ?? 0;
+    if (accountCount == 0) {
+      final now = DateTime.now().toIso8601String();
+      await db.rawInsert('''
+        INSERT INTO accounts (id, uuid, name, email, phone, status, created_at, updated_at)
+        VALUES (1, 'acc-system', 'System Default Account', 'system@example.com', '0000000000', 'Active', '$now', '$now')
+      ''');
+    }
+
+    final roles = await db.rawQuery('SELECT COUNT(*) as count FROM roles');
+    final roleCount = Sqflite.firstIntValue(roles) ?? 0;
+    if (roleCount == 0) {
+      final now = DateTime.now().toIso8601String();
+      await db.rawInsert('''
+        INSERT INTO roles (uuid, name, description, created_at, updated_at)
+        VALUES 
+          ('r1-owner', 'Owner', 'Complete system control and ownership', '$now', '$now'),
+          ('r2-manager', 'Manager', 'Property operations and configuration management', '$now', '$now'),
+          ('r3-receptionist', 'Receptionist', 'Checks, reservations, guest registry and billing operations', '$now', '$now'),
+          ('r4-accountant', 'Accountant', 'Financial reporting, ledger verification, payments and expenses', '$now', '$now'),
+          ('r5-housekeeping', 'Housekeeping', 'Unit service, maintenance and room cleanliness status updates', '$now', '$now')
+      ''');
+    }
+
+    final users = await db.rawQuery('SELECT COUNT(*) as count FROM users');
+    final userCount = Sqflite.firstIntValue(users) ?? 0;
+    if (userCount == 0) {
+      final now = DateTime.now().toIso8601String();
+      await db.rawInsert('''
+        INSERT INTO users (id, uuid, account_id, role_id, name, email, password_hash, status, created_at, updated_at)
+        VALUES (1, 'usr-system', 1, 1, 'System Administrator', 'admin@example.com', 'system-default-hash', 'Active', '$now', '$now')
+      ''');
+    }
+
+    final pTypes = await db.rawQuery('SELECT COUNT(*) as count FROM property_types');
+    final pTypeCount = Sqflite.firstIntValue(pTypes) ?? 0;
+    if (pTypeCount == 0) {
+      await db.rawInsert('''
+        INSERT INTO property_types (name, description)
+        VALUES 
+          ('Hotel', 'Standard hotel properties with multi-room setups'),
+          ('Apartments', 'Furnished rooms and luxury suites'),
+          ('Resort', 'Leisure resort and facilities setups'),
+          ('Guest House', 'Boutique hospitality and home stay buildings')
+      ''');
+    }
   }
 
   Future<void> close() async {

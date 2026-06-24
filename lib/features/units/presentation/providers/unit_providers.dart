@@ -5,6 +5,7 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/services/audit_service.dart';
 import '../../domain/entities/unit.dart';
 import '../../domain/entities/unit_type.dart';
 import '../../domain/repositories/unit_repository.dart';
@@ -26,15 +27,24 @@ final getUnitsUseCaseProvider = Provider<GetUnits>((ref) {
 });
 
 final createUnitUseCaseProvider = Provider<CreateUnit>((ref) {
-  return CreateUnit(ref.watch(unitRepositoryProvider));
+  return CreateUnit(
+    ref.watch(unitRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
 });
 
 final updateUnitUseCaseProvider = Provider<UpdateUnit>((ref) {
-  return UpdateUnit(ref.watch(unitRepositoryProvider));
+  return UpdateUnit(
+    ref.watch(unitRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
 });
 
 final archiveUnitUseCaseProvider = Provider<ArchiveUnit>((ref) {
-  return ArchiveUnit(ref.watch(unitRepositoryProvider));
+  return ArchiveUnit(
+    ref.watch(unitRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
 });
 
 final getUnitTypesUseCaseProvider = Provider<GetUnitTypes>((ref) {

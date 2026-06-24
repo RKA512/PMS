@@ -16,7 +16,6 @@ import '../../domain/entities/invoice_line.dart';
 import '../providers/invoice_providers.dart';
 import '../widgets/invoice_form_dialog.dart';
 import '../widgets/invoice_details_dialog.dart';
-import '../widgets/invoice_status_badge.dart';
 import '../widgets/invoice_list_table.dart';
 
 class InvoicesScreen extends ConsumerStatefulWidget {

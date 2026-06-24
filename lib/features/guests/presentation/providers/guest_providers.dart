@@ -4,6 +4,7 @@
 library;
 
 import '../../../../core/providers/session_providers.dart';
+import '../../../../core/services/audit_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/guest.dart';
 import '../../domain/repositories/guest_repository.dart';
@@ -27,15 +28,24 @@ final getGuestsUseCaseProvider = Provider<GetGuests>((ref) {
 });
 
 final createGuestUseCaseProvider = Provider<CreateGuest>((ref) {
-  return CreateGuest(ref.watch(guestRepositoryProvider));
+  return CreateGuest(
+    ref.watch(guestRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
 });
 
 final updateGuestUseCaseProvider = Provider<UpdateGuest>((ref) {
-  return UpdateGuest(ref.watch(guestRepositoryProvider));
+  return UpdateGuest(
+    ref.watch(guestRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
 });
 
 final archiveGuestUseCaseProvider = Provider<ArchiveGuest>((ref) {
-  return ArchiveGuest(ref.watch(guestRepositoryProvider));
+  return ArchiveGuest(
+    ref.watch(guestRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
 });
 
 final searchGuestsUseCaseProvider = Provider<SearchGuests>((ref) {

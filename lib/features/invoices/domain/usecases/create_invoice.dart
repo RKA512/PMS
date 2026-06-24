@@ -6,13 +6,15 @@ library;
 
 import 'package:uuid/uuid.dart';
 import '../../../../core/errors/failure.dart';
+import '../../../../core/contracts/audit_logger.dart';
 import '../entities/invoice.dart';
 import '../repositories/invoice_repository.dart';
 
 class CreateInvoice {
   final InvoiceRepository _repository;
+  final AuditLogger _auditService;
 
-  CreateInvoice(this._repository);
+  CreateInvoice(this._repository, this._auditService);
 
   Future<int> call(Invoice invoice, int userId) async {
     // 1. Business & MVP Validation Rules
@@ -20,6 +22,15 @@ class CreateInvoice {
       throw const ValidationFailure(
         code: 'INVALID_BOOKING_LINK',
         message: 'يجب ربط الفاتورة بحجز صحيح.',
+      );
+    }
+
+    // Check if an invoice already exists for this booking ID
+    final existingInvoice = await _repository.getInvoiceByBookingId(invoice.bookingId);
+    if (existingInvoice != null) {
+      throw const BusinessRuleFailure(
+        code: 'DUPLICATE_BOOKING_INVOICE',
+        message: 'تنبيه مالي: يوجد بالفعل فاتورة مرتبطة بهذا الحجز ومن غير المسموح إنشاء فاتورة مكررة لنفس الحجز.',
       );
     }
 
@@ -59,6 +70,17 @@ class CreateInvoice {
       uuid: invoice.uuid.isEmpty ? const Uuid().v4() : invoice.uuid,
     );
 
-    return await _repository.createInvoice(prepared, userId);
+    final id = await _repository.createInvoice(prepared, userId);
+
+    // Log audit event
+    await _auditService.log(
+      userId: userId,
+      entityType: 'Invoice',
+      entityId: id,
+      action: 'Create Invoice',
+      description: 'تم إنشاء مسودة فاتورة جديدة برقم ${prepared.invoiceNumber}.',
+    );
+
+    return id;
   }
 }

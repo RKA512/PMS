@@ -5,13 +5,15 @@ library;
 
 import '../../../../core/common/enums/invoice_status.dart';
 import '../../../../core/errors/failure.dart';
+import '../../../../core/contracts/audit_logger.dart';
 import '../entities/invoice.dart';
 import '../repositories/invoice_repository.dart';
 
 class UpdateInvoice {
   final InvoiceRepository _repository;
+  final AuditLogger _auditService;
 
-  UpdateInvoice(this._repository);
+  UpdateInvoice(this._repository, this._auditService);
 
   Future<void> call(Invoice invoice, int userId) async {
     if (invoice.id == null) {
@@ -69,5 +71,14 @@ class UpdateInvoice {
     }
 
     await _repository.updateInvoice(invoice, userId);
+
+    // Log audit
+    await _auditService.log(
+      userId: userId,
+      entityType: 'Invoice',
+      entityId: invoice.id!,
+      action: 'Update Invoice',
+      description: 'تم تحديث الخطوط والتعديلات الخاصة بمسودة الفاتورة ${invoice.invoiceNumber}.',
+    );
   }
 }

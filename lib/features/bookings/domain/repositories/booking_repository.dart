@@ -6,7 +6,9 @@ library;
 import '../entities/booking.dart';
 
 abstract class BookingRepository {
-  Future<Booking> createBooking(Booking booking, List<int> unitIds, List<int> guestIds);
+  Future<int> insertBookingRow(Booking booking);
+  Future<void> insertBookingUnit({required int bookingId, required int unitId, required DateTime startDate, required DateTime endDate, required String uuid});
+  Future<void> insertBookingGuest({required int bookingId, required int guestId});
   Future<void> updateBooking(Booking booking);
   Future<Booking?> getBookingById(int id);
   Future<Booking?> getBookingByNumber(String bookingNumber);

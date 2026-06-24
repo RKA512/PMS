@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/session_providers.dart';
 import '../../../properties/presentation/providers/property_providers.dart';
 import '../providers/unit_providers.dart';
 import '../../domain/entities/unit.dart';
@@ -294,7 +295,8 @@ class _UnitsScreenState extends ConsumerState<UnitsScreen> {
                                         TextButton(
                                           onPressed: () async {
                                             Navigator.pop(btnContext);
-                                            await ref.read(archiveUnitUseCaseProvider)(u.id!);
+                                            final userId = ref.read(authenticatedUserIdProvider) ?? 1;
+                                             await ref.read(archiveUnitUseCaseProvider)(id: u.id!, userId: userId);
                                             ref.read(unitsListProvider(activeProperty.id!).notifier).fetchUnits(includeArchived: _showArchived);
                                           },
                                           child: const Text('تأكيد أرشفة (Archive)', style: TextStyle(color: Colors.red)),
@@ -386,6 +388,7 @@ class _UnitFormDialogState extends ConsumerState<UnitFormDialog> {
 
       if (widget.unit == null) {
         // Create Flow
+        final userId = ref.read(authenticatedUserIdProvider) ?? 1;
         await ref.read(createUnitUseCaseProvider)(
           propertyId: widget.propertyId,
           unitTypeId: _selectedUnitTypeId!,
@@ -394,6 +397,7 @@ class _UnitFormDialogState extends ConsumerState<UnitFormDialog> {
           floorNumber: floorVal,
           capacity: capacityVal,
           notes: _notesController.text,
+          userId: userId,
         );
       } else {
         // Edit Flow
@@ -406,7 +410,8 @@ class _UnitFormDialogState extends ConsumerState<UnitFormDialog> {
           status: _selectedStatus,
           notes: _notesController.text,
         );
-        await ref.read(updateUnitUseCaseProvider)(updated);
+        final userId = ref.read(authenticatedUserIdProvider) ?? 1;
+        await ref.read(updateUnitUseCaseProvider)(unit: updated, userId: userId);
       }
       Navigator.pop(context, true);
     } catch (e) {

@@ -4,7 +4,6 @@
 library;
 
 import '../../../../core/database/database_helper.dart';
-import '../../../../core/services/audit_service.dart';
 import '../../../../core/errors/failure.dart';
 import '../../domain/entities/guest.dart';
 import '../../domain/entities/guest_contact.dart';
@@ -166,21 +165,11 @@ class GuestRepositoryImpl implements GuestRepository {
         final guestMap = GuestModel.toMap(guest);
         final id = await txn.insert('guests', guestMap);
 
-        // Save contacts if exist
+                // Save contacts if exist
         for (final contact in guest.contacts) {
           final contactMap = GuestContactModel.toMap(contact.copyWith(guestId: id));
           await txn.insert('guest_contacts', contactMap);
         }
-
-        // Log Audit Event
-        await AuditService.instance.log(
-          userId: userId,
-          entityType: 'Guest',
-          entityId: id,
-          action: 'Create Guest',
-          description: 'أنشأ الضيف: ${guest.fullName} (Created guest: ${guest.fullName})',
-          newValues: guestMap..['id'] = id,
-        );
 
         return id;
       });
@@ -202,8 +191,6 @@ class GuestRepositoryImpl implements GuestRepository {
     }
     try {
       final db = await _dbHelper.database;
-      final oldGuest = await getGuestById(guest.id!);
-      final oldMap = oldGuest != null ? GuestModel.toMap(oldGuest) : null;
 
       await db.transaction((txn) async {
         final guestMap = GuestModel.toMap(guest);
@@ -224,17 +211,6 @@ class GuestRepositoryImpl implements GuestRepository {
           final contactMap = GuestContactModel.toMap(contact.copyWith(guestId: guest.id));
           await txn.insert('guest_contacts', contactMap);
         }
-
-        // Log Audit Event
-        await AuditService.instance.log(
-          userId: userId,
-          entityType: 'Guest',
-          entityId: guest.id!,
-          action: 'Update Guest',
-          description: 'حدّث بيانات الضيف: ${guest.fullName} (Updated guest: ${guest.fullName})',
-          oldValues: oldMap,
-          newValues: guestMap,
-        );
       });
     } catch (e) {
       throw DatabaseFailure(
@@ -250,7 +226,6 @@ class GuestRepositoryImpl implements GuestRepository {
       final db = await _dbHelper.database;
       final oldGuest = await getGuestById(id);
       if (oldGuest == null) return;
-      final oldMap = GuestModel.toMap(oldGuest);
 
       final now = DateTime.now().toIso8601String();
       await db.transaction((txn) async {
@@ -259,16 +234,6 @@ class GuestRepositoryImpl implements GuestRepository {
           {'deleted_at': now, 'updated_at': now},
           where: 'id = ?',
           whereArgs: [id],
-        );
-
-        // Log Audit Event
-        await AuditService.instance.log(
-          userId: userId,
-          entityType: 'Guest',
-          entityId: id,
-          action: 'Archive Guest',
-          description: 'أرشف الضيف: ${oldGuest.fullName} (Archived guest: ${oldGuest.fullName})',
-          oldValues: oldMap,
         );
       });
     } catch (e) {

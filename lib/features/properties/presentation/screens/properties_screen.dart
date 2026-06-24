@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/session_providers.dart';
 import '../providers/property_providers.dart';
 import '../../domain/entities/property.dart';
 
@@ -275,7 +276,8 @@ class _PropertiesScreenState extends ConsumerState<PropertiesScreen> {
                                             TextButton(
                                               onPressed: () async {
                                                 Navigator.pop(btnContext);
-                                                await ref.read(archivePropertyUseCaseProvider)(prop.id!);
+                                                final userId = ref.read(authenticatedUserIdProvider) ?? 1;
+                                                await ref.read(archivePropertyUseCaseProvider)(id: prop.id!, userId: userId);
                                                 ref.read(propertiesListProvider.notifier).fetchProperties(includeArchived: _showArchived);
                                                 if (ref.read(selectedPropertyProvider)?.id == prop.id) {
                                                   ref.read(selectedPropertyProvider.notifier).state = null;
@@ -373,6 +375,7 @@ class _PropertyFormDialogState extends ConsumerState<PropertyFormDialog> {
     try {
       if (widget.property == null) {
         // Create Flow
+        final userId = ref.read(authenticatedUserIdProvider) ?? 1;
         await ref.read(createPropertyUseCaseProvider)(
           accountId: 1, // Pre-seeded default system account ID
           propertyTypeId: _selectedPropertyTypeId!,
@@ -384,6 +387,7 @@ class _PropertyFormDialogState extends ConsumerState<PropertyFormDialog> {
           email: _emailController.text,
           currencyCode: _currencyController.text,
           useBusinessDays: _useBusinessDays,
+          userId: userId,
         );
       } else {
         // Update Flow
@@ -398,7 +402,8 @@ class _PropertyFormDialogState extends ConsumerState<PropertyFormDialog> {
           currencyCode: _currencyController.text,
           useBusinessDays: _useBusinessDays,
         );
-        await ref.read(updatePropertyUseCaseProvider)(updated);
+        final userId = ref.read(authenticatedUserIdProvider) ?? 1;
+        await ref.read(updatePropertyUseCaseProvider)(property: updated, userId: userId);
       }
       Navigator.pop(context, true);
     } catch (e) {

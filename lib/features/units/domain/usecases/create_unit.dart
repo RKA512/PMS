@@ -6,14 +6,17 @@ library;
 import 'package:uuid/uuid.dart';
 import '../../../../core/common/enums/unit_status.dart';
 import '../../../../core/errors/failure.dart';
+import '../../../../core/contracts/audit_logger.dart';
+import '../../data/models/unit_model.dart';
 import '../entities/unit.dart';
 import '../repositories/unit_repository.dart';
 
 class CreateUnit {
   final UnitRepository repository;
+  final AuditLogger auditService;
   final _uuid = const Uuid();
 
-  CreateUnit(this.repository);
+  CreateUnit(this.repository, this.auditService);
 
   Future<int> call({
     required int propertyId,
@@ -23,6 +26,7 @@ class CreateUnit {
     int? floorNumber,
     required int capacity,
     String? notes,
+    required int userId,
   }) async {
     if (name.trim().isEmpty) {
       throw const ValidationFailure(
@@ -58,6 +62,21 @@ class CreateUnit {
       updatedAt: now,
     );
 
-    return await repository.createUnit(unit);
+    final id = await repository.createUnit(unit);
+
+    // Log Audit Event
+    await auditService.log(
+      propertyId: unit.propertyId,
+      userId: userId,
+      entityType: 'Unit',
+      entityId: id,
+      action: 'Create Unit',
+      description: 'Created unit ${unit.name} (Room: ${unit.unitNumber})',
+      newValues: UnitModel.toMap(
+        unit.copyWith(id: id),
+      ),
+    );
+
+    return id;
   }
 }

@@ -4,7 +4,6 @@
 library;
 
 import '../../../../core/database/database_helper.dart';
-import '../../../../core/services/audit_service.dart';
 import '../../../../core/common/enums/unit_status.dart';
 import '../../domain/entities/unit.dart';
 import '../../domain/entities/unit_type.dart';
@@ -16,7 +15,7 @@ class UnitRepositoryImpl implements UnitRepository {
 
   @override
   Future<List<Unit>> getUnits({required int propertyId, bool includeArchived = false}) async {
-    final db = await _dbHelper.database;
+    final db = await _dbHelper.executor;
     final List<Map<String, dynamic>> maps;
     if (includeArchived) {
       maps = await db.query(
@@ -38,7 +37,7 @@ class UnitRepositoryImpl implements UnitRepository {
 
   @override
   Future<Unit?> getUnitById(int id) async {
-    final db = await _dbHelper.database;
+    final db = await _dbHelper.executor;
     final maps = await db.query(
       'units',
       where: 'id = ?',
@@ -51,7 +50,7 @@ class UnitRepositoryImpl implements UnitRepository {
 
   @override
   Future<Unit?> getUnitByUuid(String uuid) async {
-    final db = await _dbHelper.database;
+    final db = await _dbHelper.executor;
     final maps = await db.query(
       'units',
       where: 'uuid = ?',
@@ -64,30 +63,15 @@ class UnitRepositoryImpl implements UnitRepository {
 
   @override
   Future<int> createUnit(Unit unit) async {
-    final db = await _dbHelper.database;
+    final db = await _dbHelper.executor;
     final id = await db.insert('units', UnitModel.toMap(unit));
-
-    // Log Audit Event
-    await AuditService.instance.log(
-      propertyId: unit.propertyId,
-      userId: 1,
-      entityType: 'Unit',
-      entityId: id,
-      action: 'Create Unit',
-      description: 'Created unit ${unit.name} (Room: ${unit.unitNumber})',
-      newValues: UnitModel.toMap(unit..copyWith(id: id)),
-    );
-
     return id;
   }
 
   @override
   Future<void> updateUnit(Unit unit) async {
     if (unit.id == null) return;
-    final db = await _dbHelper.database;
-
-    final oldUnit = await getUnitById(unit.id!);
-    final oldMap = oldUnit != null ? UnitModel.toMap(oldUnit) : null;
+    final db = await _dbHelper.executor;
 
     await db.update(
       'units',
@@ -95,28 +79,12 @@ class UnitRepositoryImpl implements UnitRepository {
       where: 'id = ?',
       whereArgs: [unit.id],
     );
-
-    // Log Audit Event
-    await AuditService.instance.log(
-      propertyId: unit.propertyId,
-      userId: 1,
-      entityType: 'Unit',
-      entityId: unit.id!,
-      action: 'Update Unit',
-      description: 'Updated unit ${unit.name} (Room: ${unit.unitNumber})',
-      oldValues: oldMap,
-      newValues: UnitModel.toMap(unit),
-    );
   }
 
   @override
   Future<void> archiveUnit(int id) async {
-    final db = await _dbHelper.database;
+    final db = await _dbHelper.executor;
     final nowString = DateTime.now().toIso8601String();
-
-    final unit = await getUnitById(id);
-    if (unit == null) return;
-    final oldMap = UnitModel.toMap(unit);
 
     await db.update(
       'units',
@@ -128,27 +96,22 @@ class UnitRepositoryImpl implements UnitRepository {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
 
-    // Log Audit Event
-    await AuditService.instance.log(
-      propertyId: unit.propertyId,
-      userId: 1,
-      entityType: 'Unit',
-      entityId: id,
-      action: 'Archive Unit',
-      description: 'Archived unit ${unit.name} (Room: ${unit.unitNumber})',
-      oldValues: oldMap,
-      newValues: {
-        'deleted_at': nowString,
-        'status': UnitStatus.archived.toJson(),
-        'updated_at': nowString,
-      },
+  @override
+  Future<void> updateUnitStatus({required int unitId, required String status}) async {
+    final db = await _dbHelper.executor;
+    await db.update(
+      'units',
+      {'status': status},
+      where: 'id = ?',
+      whereArgs: [unitId],
     );
   }
 
   @override
   Future<List<UnitType>> getUnitTypes() async {
-    final db = await _dbHelper.database;
+    final db = await _dbHelper.executor;
     final maps = await db.query('unit_types', orderBy: 'name ASC');
     return maps.map((map) {
       return UnitType(

@@ -3,10 +3,15 @@
 /// Implements [Architecture Rule AR-011] for managing state and flows securely.
 library;
 
+import 'dart:async';
+import '../../../../core/common/models/money.dart';
 import '../../../../core/providers/session_providers.dart';
+import '../../../../core/services/audit_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/invoice.dart';
 import '../../domain/repositories/invoice_repository.dart';
+import '../../../../core/contracts/payment_balance_reader.dart';
+import '../../../../core/database/sqlite_payment_balance_reader.dart';
 import '../../data/repositories/invoice_repository_impl.dart';
 import '../../domain/usecases/create_invoice.dart';
 import '../../domain/usecases/update_invoice.dart';
@@ -21,6 +26,11 @@ import '../../domain/usecases/calculate_outstanding_balance.dart';
 import '../../domain/usecases/get_uninvoiced_bookings.dart';
 import '../../domain/usecases/get_invoice_by_id.dart';
 
+// Payment Balance Reader Provider (Decoupling boundary)
+final paymentBalanceReaderProvider = Provider<PaymentBalanceReader>((ref) {
+  return SqlitePaymentBalanceReader();
+});
+
 // Repository Provider
 final invoiceRepositoryProvider = Provider<InvoiceRepository>((ref) {
   return InvoiceRepositoryImpl();
@@ -28,31 +38,52 @@ final invoiceRepositoryProvider = Provider<InvoiceRepository>((ref) {
 
 // Use Case Providers
 final createInvoiceUseCaseProvider = Provider<CreateInvoice>((ref) {
-  return CreateInvoice(ref.watch(invoiceRepositoryProvider));
+  return CreateInvoice(
+    ref.watch(invoiceRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
 });
 
 final updateInvoiceUseCaseProvider = Provider<UpdateInvoice>((ref) {
-  return UpdateInvoice(ref.watch(invoiceRepositoryProvider));
+  return UpdateInvoice(
+    ref.watch(invoiceRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
 });
 
 final addInvoiceLineUseCaseProvider = Provider<AddInvoiceLine>((ref) {
-  return AddInvoiceLine(ref.watch(invoiceRepositoryProvider));
+  return AddInvoiceLine(
+    ref.watch(invoiceRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
 });
 
 final removeInvoiceLineUseCaseProvider = Provider<RemoveInvoiceLine>((ref) {
-  return RemoveInvoiceLine(ref.watch(invoiceRepositoryProvider));
+  return RemoveInvoiceLine(
+    ref.watch(invoiceRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
 });
 
 final addInvoiceAdjustmentUseCaseProvider = Provider<AddInvoiceAdjustment>((ref) {
-  return AddInvoiceAdjustment(ref.watch(invoiceRepositoryProvider));
+  return AddInvoiceAdjustment(
+    ref.watch(invoiceRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
 });
 
 final issueInvoiceUseCaseProvider = Provider<IssueInvoice>((ref) {
-  return IssueInvoice(ref.watch(invoiceRepositoryProvider));
+  return IssueInvoice(
+    ref.watch(invoiceRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
 });
 
 final cancelInvoiceUseCaseProvider = Provider<CancelInvoice>((ref) {
-  return CancelInvoice(ref.watch(invoiceRepositoryProvider));
+  return CancelInvoice(
+    ref.watch(invoiceRepositoryProvider),
+    ref.watch(auditServiceProvider),
+  );
 });
 
 final getInvoiceByBookingUseCaseProvider = Provider<GetInvoiceByBooking>((ref) {
@@ -64,7 +95,10 @@ final getInvoicesUseCaseProvider = Provider<GetInvoices>((ref) {
 });
 
 final calculateOutstandingBalanceUseCaseProvider = Provider<CalculateOutstandingBalance>((ref) {
-  return CalculateOutstandingBalance(ref.watch(invoiceRepositoryProvider));
+  return CalculateOutstandingBalance(
+    ref.watch(invoiceRepositoryProvider),
+    ref.watch(paymentBalanceReaderProvider),
+  );
 });
 
 final getUninvoicedBookingsUseCaseProvider = Provider<GetUninvoicedBookings>((ref) {
@@ -79,28 +113,40 @@ final getInvoiceByIdUseCaseProvider = Provider<GetInvoiceById>((ref) {
 final invoiceSearchQueryProvider = StateProvider<String>((ref) => '');
 
 // Notifier for Invoices list
-class InvoicesListNotifier extends StateNotifier<AsyncValue<List<Invoice>>> {
-  final GetInvoices _getInvoices;
+class InvoicesListNotifier extends AsyncNotifier<List<Invoice>> {
+  @override
+  FutureOr<List<Invoice>> build() async {
+    final accountId = ref.watch(activeAccountIdProvider);
+    if (accountId == null) return const [];
 
-  InvoicesListNotifier(this._getInvoices) : super(const AsyncValue.loading());
+    final getInvs = ref.watch(getInvoicesUseCaseProvider);
+    final query = ref.watch(invoiceSearchQueryProvider);
 
-  void setEmpty() {
-    state = const AsyncValue.data([]);
+    final list = await getInvs(accountId);
+
+    if (query.trim().isNotEmpty) {
+      final lowercaseQuery = query.trim().toLowerCase();
+      return list.where((inv) {
+        return inv.invoiceNumber.toLowerCase().contains(lowercaseQuery) ||
+               inv.status.name.toLowerCase().contains(lowercaseQuery);
+      }).toList();
+    }
+    return list;
   }
 
   Future<void> fetchInvoices(int accountId, {String filterQuery = ''}) async {
     state = const AsyncValue.loading();
     try {
-      final list = await _getInvoices(accountId);
+      final getInvs = ref.read(getInvoicesUseCaseProvider);
+      final query = filterQuery.isNotEmpty ? filterQuery : ref.read(invoiceSearchQueryProvider);
+      final list = await getInvs(accountId);
       
-      // Perform localized client searching for visual responsiveness
-      if (filterQuery.trim().isNotEmpty) {
-        final query = filterQuery.trim().toLowerCase();
-        final filtered = list.where((inv) {
-          return inv.invoiceNumber.toLowerCase().contains(query) ||
-                 inv.status.name.toLowerCase().contains(query);
-        }).toList();
-        state = AsyncValue.data(filtered);
+      if (query.trim().isNotEmpty) {
+        final lowercaseQuery = query.trim().toLowerCase();
+        state = AsyncValue.data(list.where((inv) {
+          return inv.invoiceNumber.toLowerCase().contains(lowercaseQuery) ||
+                 inv.status.name.toLowerCase().contains(lowercaseQuery);
+        }).toList());
       } else {
         state = AsyncValue.data(list);
       }
@@ -110,21 +156,8 @@ class InvoicesListNotifier extends StateNotifier<AsyncValue<List<Invoice>>> {
   }
 }
 
-final invoicesListProvider = StateNotifierProvider<InvoicesListNotifier, AsyncValue<List<Invoice>>>((ref) {
-  final getInvs = ref.watch(getInvoicesUseCaseProvider);
-  final accountId = ref.watch(activeAccountIdProvider);
-  final query = ref.watch(invoiceSearchQueryProvider);
-
-  final notifier = InvoicesListNotifier(getInvs);
-
-  if (accountId == null) {
-    notifier.setEmpty();
-  } else {
-    // Fetch reactively on active session context
-    Future.microtask(() => notifier.fetchInvoices(accountId, filterQuery: query));
-  }
-
-  return notifier;
+final invoicesListProvider = AsyncNotifierProvider<InvoicesListNotifier, List<Invoice>>(() {
+  return InvoicesListNotifier();
 });
 
 // Provider to watch specific booking's invoice with reload/refresh support
@@ -134,8 +167,7 @@ final bookingInvoiceProvider = FutureProvider.family<Invoice?, int>((ref, bookin
 });
 
 // Dynamic outstanding balance provider for a specific invoice
-final invoiceOutstandingBalanceProvider = FutureProvider.family<double, int>((ref, invoiceId) async {
+final invoiceOutstandingBalanceProvider = FutureProvider.family<Money, int>((ref, invoiceId) async {
   final calcBalance = ref.watch(calculateOutstandingBalanceUseCaseProvider);
-  final m = await calcBalance(invoiceId);
-  return m.asDouble;
+  return await calcBalance(invoiceId);
 });

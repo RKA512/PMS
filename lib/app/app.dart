@@ -5,6 +5,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'theme/app_theme.dart';
 import '../features/properties/presentation/screens/properties_screen.dart';
@@ -27,6 +28,11 @@ class PropertyManagementSystemApp extends StatelessWidget {
         Locale('ar', 'SA'),
         Locale('en', 'US'),
         Locale('fr', 'FR'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
       ],
       home: const PMSDashboardHomeScreen(),
     );

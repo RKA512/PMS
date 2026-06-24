@@ -5,12 +5,14 @@ library;
 
 import '../../../../core/errors/failure.dart';
 import '../../../../core/common/enums/invoice_status.dart';
+import '../../../../core/contracts/audit_logger.dart';
 import '../repositories/invoice_repository.dart';
 
 class IssueInvoice {
   final InvoiceRepository _repository;
+  final AuditLogger _auditService;
 
-  IssueInvoice(this._repository);
+  IssueInvoice(this._repository, this._auditService);
 
   Future<void> call(int invoiceId, int userId) async {
     final invoice = await _repository.getInvoiceById(invoiceId);
@@ -39,5 +41,13 @@ class IssueInvoice {
     final frozenTotal = invoice.calculatedTotal;
 
     await _repository.issueInvoice(invoiceId, frozenTotal, userId);
+
+    await _auditService.log(
+      userId: userId,
+      entityType: 'Invoice',
+      entityId: invoiceId,
+      action: 'Issue Invoice',
+      description: 'تم إصدار الفاتورة وتجميد المجموع المالي النهائي عند ${frozenTotal.toString()}.',
+    );
   }
 }
