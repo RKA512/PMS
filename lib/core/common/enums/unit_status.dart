@@ -9,8 +9,7 @@ enum UnitStatus {
   reserved,
   occupied,
   maintenance,
-  outOfService,
-  archived;
+  outOfService;
 
   String toJson() => name;
 
@@ -33,8 +32,6 @@ enum UnitStatus {
         return 'صيانة (Maintenance)';
       case UnitStatus.outOfService:
         return 'خارج الخدمة (Out of Service)';
-      case UnitStatus.archived:
-        return 'مؤرشف (Archived)';
     }
   }
 }

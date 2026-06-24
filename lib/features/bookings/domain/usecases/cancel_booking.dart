@@ -6,14 +6,16 @@ library;
 import '../../../../core/errors/failure.dart';
 import '../../../../core/common/enums/booking_status.dart';
 import '../../../../core/contracts/audit_logger.dart';
+import '../../../units/domain/repositories/unit_repository.dart';
 import '../entities/booking.dart';
 import '../repositories/booking_repository.dart';
 
 class CancelBookingUseCase {
   final BookingRepository _repository;
   final AuditLogger _auditService;
+  final UnitRepository _unitRepository;
 
-  CancelBookingUseCase(this._repository, this._auditService);
+  CancelBookingUseCase(this._repository, this._auditService, this._unitRepository);
 
   Future<void> execute({
     required Booking booking,
@@ -39,6 +41,12 @@ class CancelBookingUseCase {
       status: BookingStatus.cancelled.toJson(),
       updatedByUserId: updatedByUserId,
     );
+
+    // Release associated units back to available status
+    final unitIds = await _repository.getUnitIdsForBooking(booking.id!);
+    for (final unitId in unitIds) {
+      await _unitRepository.updateUnitStatus(unitId: unitId, status: 'available');
+    }
 
     await _auditService.log(
       propertyId: booking.propertyId,

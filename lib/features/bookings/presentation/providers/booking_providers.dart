@@ -63,6 +63,7 @@ final cancelBookingUseCaseProvider = Provider<CancelBookingUseCase>((ref) {
   return CancelBookingUseCase(
     ref.watch(bookingRepositoryProvider),
     ref.watch(auditServiceProvider),
+    ref.watch(unitRepositoryProvider),
   );
 });
 

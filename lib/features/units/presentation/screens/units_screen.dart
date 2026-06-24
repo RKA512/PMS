@@ -45,8 +45,6 @@ class _UnitsScreenState extends ConsumerState<UnitsScreen> {
         return const Color(0xFFF59E0B); // Amber
       case UnitStatus.outOfService:
         return const Color(0xFF64748B); // Slate
-      case UnitStatus.archived:
-        return const Color(0xFF94A3B8); // Gray
     }
   }
 

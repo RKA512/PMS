@@ -31,7 +31,6 @@ class UnarchiveUnit {
       oldValues: oldMap,
       newValues: {
         'deleted_at': null,
-        'status': UnitStatus.available.toJson(),
         'updated_at': nowString,
       },
     );

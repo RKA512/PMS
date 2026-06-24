@@ -72,7 +72,7 @@ class EditBookingUseCase {
     final unitIds = await _repository.getUnitIdsForBooking(existingBooking.id!);
     for (final unitId in unitIds) {
       final unit = await _unitRepository.getUnitById(unitId);
-      if (unit == null || unit.deletedAt != null || unit.status == UnitStatus.archived) {
+      if (unit == null || unit.deletedAt != null) {
         throw const BusinessRuleFailure(
           code: 'UNIT_ARCHIVED',
           message: 'لا يمكن تعديل حجز لوحدة سكنية مؤرشفة (Cannot edit booking for an archived unit).',

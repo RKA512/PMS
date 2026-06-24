@@ -31,7 +31,6 @@ class ArchiveUnit {
       oldValues: oldMap,
       newValues: {
         'deleted_at': nowString,
-        'status': UnitStatus.archived.toJson(),
         'updated_at': nowString,
       },
     );

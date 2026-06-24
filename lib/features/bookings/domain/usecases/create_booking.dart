@@ -77,7 +77,7 @@ class CreateBookingUseCase {
     // Domain Rule: Ensure all units are not archived
     for (final unitId in unitIds) {
       final unit = await _unitRepository.getUnitById(unitId);
-      if (unit == null || unit.deletedAt != null || unit.status == UnitStatus.archived) {
+      if (unit == null || unit.deletedAt != null) {
         throw const BusinessRuleFailure(
           code: 'UNIT_ARCHIVED',
           message: 'لا يمكن إنشاء حجز لوحدة سكنية مؤرشفة (Cannot create booking for an archived unit).',
